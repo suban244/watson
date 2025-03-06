@@ -1,0 +1,11 @@
+[project]
+name = "uv-fastapi-example"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.112.1",
+    "pydantic-settings>=2.8.1",
+    "SQLAlchemy>=2.0.38"
+]

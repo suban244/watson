@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
 
+
 class Transaction(BaseModel):
     amount: float
     title: str
@@ -13,6 +14,7 @@ class Transaction(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class SubCategory(BaseModel):
     name: str
     description: str
@@ -21,21 +23,24 @@ class SubCategory(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class Category(BaseModel):
     name: str
     description: str
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class Budget(BaseModel):
     name: str
     description: str
     start_date: datetime
     end_date: datetime
-    
+
     budget_config: dict
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class SubCategoryLimit(BaseModel):
     sub_category: UUID
@@ -43,6 +48,6 @@ class SubCategoryLimit(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class BudgetConfig(BaseModel):
     sub_category_limits: list[SubCategoryLimit] = []
-

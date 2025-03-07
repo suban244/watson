@@ -3,6 +3,7 @@ from config import settings
 SYNC_DB_API = "psycopg"
 ASYNC_DB_API = "asyncpg"
 
+
 def build_connection_string(
     db_api: str = ASYNC_DB_API,
     user: str = settings.POSTGRES_USER,

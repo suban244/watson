@@ -7,5 +7,14 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.112.1",
     "pydantic-settings>=2.8.1",
-    "SQLAlchemy>=2.0.38"
+    "SQLAlchemy>=2.0.38",
+    "alembic>=1.15.1",
+    "psycopg[c,pool]>=3.2.5",
+    "asyncpg==0.30.0"
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.1.0",
+    "ruff>=0.9.10",
 ]

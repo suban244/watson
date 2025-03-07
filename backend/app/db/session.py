@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessi
 from sqlalchemy.exc import SQLAlchemyError
 from .engine import build_connection_string
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 DATABASE_URL = build_connection_string()
 
@@ -40,4 +40,3 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
             print(f"Unexpected error in session: {e}")
             await session.rollback()
             raise
-

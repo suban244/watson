@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.ext.mutable import MutableDict, MutableList
-from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column, relationship
+from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import func
 
 
@@ -19,14 +19,19 @@ class PrimaryTimestamped(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now, server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=func.now(), nullable=False)
-    meta: Mapped[dict | None] = mapped_column(MutableDict.as_mutable(JSONB), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, onupdate=func.now(), nullable=False
+    )
+    meta: Mapped[dict | None] = mapped_column(
+        MutableDict.as_mutable(JSONB), nullable=True
+    )
 
 
 @declarative_mixin
 class PrimaryUUIDTimestamped(PrimaryTimestamped):
     __abstract__ = True
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+
 
 # class Category(PrimaryUUIDTimestamped):
 #     __tablename__ = "categories"
@@ -46,7 +51,6 @@ class PrimaryUUIDTimestamped(PrimaryTimestamped):
 
 #     category: Mapped[Category] = relationship("Category", back_populates="sub_categories")
 #     category_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("categories.id"), nullable=False)
-
 
 
 # class Transaction(PrimaryUUIDTimestamped):

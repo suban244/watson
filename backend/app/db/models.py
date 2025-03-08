@@ -6,6 +6,8 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import func
+from sqlalchemy import Boolean, Float, ForeignKey, String, Text
+from sqlalchemy.orm import relationship
 
 
 class Base(DeclarativeBase):
@@ -33,46 +35,61 @@ class PrimaryUUIDTimestamped(PrimaryTimestamped):
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
 
 
-# class Category(PrimaryUUIDTimestamped):
-#     __tablename__ = "categories"
+class Category(PrimaryUUIDTimestamped):
+    __tablename__ = "categories"
 
-#     name: Mapped[str] = mapped_column(String(255), nullable=False)
-#     description: Mapped[str] = mapped_column(Text, nullable=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
 
-#     sub_catagories: Mapped[list["SubCategory"]] = relationship("SubCategory", back_populates="category")
-
-# class SubCategory(PrimaryUUIDTimestamped):
-#     __tablename__ = "sub_categories"
-
-#     name: Mapped[str] = mapped_column(String(255), nullable=False)
-#     description: Mapped[str] = mapped_column(Text, nullable=True)
-
-#     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="sub_category")
-
-#     category: Mapped[Category] = relationship("Category", back_populates="sub_categories")
-#     category_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("categories.id"), nullable=False)
+    sub_catagories: Mapped[list["SubCategory"]] = relationship(
+        "SubCategory", back_populates="category"
+    )
 
 
-# class Transaction(PrimaryUUIDTimestamped):
-#     __tablename__ = "transactions"
+class SubCategory(PrimaryUUIDTimestamped):
+    __tablename__ = "sub_categories"
 
-#     amount: Mapped[float] = mapped_column(Float, nullable=False)
-#     title: Mapped[str] = mapped_column(String(255), nullable=False)
-#     description: Mapped[str] = mapped_column(Text, nullable=True)
-#     is_income: Mapped[bool] = mapped_column(Boolean, nullable=False)
-#     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
 
-#     sub_category: Mapped[SubCategory] = relationship("SubCategory", back_populates="transactions")
-#     sub_category_id: Mapped[uuid.UUID]= mapped_column(UUID, ForeignKey("sub_categories.id"), nullable=True)
+    transactions: Mapped[list["Transaction"]] = relationship(
+        "Transaction", back_populates="sub_category"
+    )
+
+    category: Mapped[Category] = relationship(
+        "Category", back_populates="sub_categories"
+    )
+    category_id: Mapped[uuid.UUID] = mapped_column(
+        UUID, ForeignKey("categories.id"), nullable=False
+    )
 
 
-# class Budget(PrimaryUUIDTimestamped):
-#     __tablename__ = "budgets"
+class Transaction(PrimaryUUIDTimestamped):
+    __tablename__ = "transactions"
 
-#     name: Mapped[str] = mapped_column(String(255), nullable=False)
-#     description: Mapped[str] = mapped_column(Text, nullable=True)
+    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+    is_income: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-#     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-#     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    sub_category: Mapped[SubCategory] = relationship(
+        "SubCategory", back_populates="transactions"
+    )
+    sub_category_id: Mapped[uuid.UUID] = mapped_column(
+        UUID, ForeignKey("sub_categories.id"), nullable=True
+    )
 
-#     budget_config: Mapped[dict] = mapped_column(MutableDict.as_mutable(JSONB), nullable=True)
+
+class Budget(PrimaryUUIDTimestamped):
+    __tablename__ = "budgets"
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+
+    start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    budget_config: Mapped[dict] = mapped_column(
+        MutableDict.as_mutable(JSONB), nullable=True
+    )

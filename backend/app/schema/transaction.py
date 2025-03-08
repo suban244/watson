@@ -31,17 +31,6 @@ class Category(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class Budget(BaseModel):
-    name: str
-    description: str
-    start_date: datetime
-    end_date: datetime
-
-    budget_config: dict
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class SubCategoryLimit(BaseModel):
     sub_category: UUID
     limit: float
@@ -51,3 +40,14 @@ class SubCategoryLimit(BaseModel):
 
 class BudgetConfig(BaseModel):
     sub_category_limits: list[SubCategoryLimit] = []
+
+
+class Budget(BaseModel):
+    name: str
+    description: str
+    start_date: datetime
+    end_date: datetime
+
+    budget_config: BudgetConfig
+
+    model_config = ConfigDict(from_attributes=True)

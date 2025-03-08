@@ -12,13 +12,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    develop:
-      watch:
-        - action: sync
-          path: ./backend
-          target: /app
-        - action: rebuild
-          path: ./backend/pyproject.toml
+    volumes:
+      - ./backend/app:/app/app
+
     ports:
       - "8000:8000"
 

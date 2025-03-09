@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from api import router as api_router
 
 app = FastAPI()
 
@@ -6,3 +7,6 @@ app = FastAPI()
 @app.get("/")
 def read_root():
     return {"Hello": "Welcome To Watson"}
+
+
+app.include_router(api_router, prefix="/api/v1")

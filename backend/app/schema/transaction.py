@@ -10,25 +10,50 @@ class Transaction(BaseModel):
     is_income: bool
     date: datetime
 
-    sub_category: UUID
+    sub_category_id: UUID | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TransactionCreate(BaseModel):
+    pass
+
+
+class TransactionRead(BaseModel):
+    pass
 
 
 class SubCategory(BaseModel):
     name: str
     description: str
 
-    category: UUID
+    category_id: UUID | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SubCategoryCreate(BaseModel):
+    pass
+
+
+class SubCategoryRead(BaseModel):
+    pass
 
 
 class Category(BaseModel):
     name: str
     description: str
+    # maybe add colors ?
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CategoryCreate(BaseModel):
+    pass
+
+
+class CategoryRead(BaseModel):
+    pass
 
 
 class SubCategoryLimit(BaseModel):

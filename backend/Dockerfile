@@ -8,12 +8,13 @@ ENV UV_LINK_MODE=copy
 
 COPY pyproject.toml uv.lock /app/
 
-COPY ./app /app
-
 RUN \
     apk add --no-cache postgresql-libs && \
     apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev && \
-    uv sync --frozen --no-install-project --no-dev && \
+    uv sync --frozen --no-dev && \
     apk --purge del .build-deps
 
-ENTRYPOINT ["/app/.venv/bin/fastapi", "run", "main.py", "--port", "8000", "--host", "0.0.0.0", "--reload"]
+COPY ./app /app/app
+
+
+ENTRYPOINT ["/app/.venv/bin/fastapi", "run", "app/main.py", "--port", "8000", "--host", "0.0.0.0", "--reload"]

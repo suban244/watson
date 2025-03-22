@@ -2,6 +2,14 @@ run_local:
 	@echo "Running in local mode with docker."
 	docker compose up --build --watch
 
+uv_lock:
+	@echo "Locking dependencies."
+	uv --directory ./backend lock
+
+uv_sync:
+	@echo "Syncing dependencies."
+	uv --directory ./backend sync
+
 check:
 	pre-commit run -a
 
@@ -17,3 +25,8 @@ makemigrations:
 migrate:
 	@echo "Migrating database."
 	uv run --directory ./backend/app --env-file ../../.env alembic upgrade head
+
+
+downgrade:
+	@echo "Downgrading database."
+	uv run --directory ./backend/app --env-file ../../.env alembic downgrade -1

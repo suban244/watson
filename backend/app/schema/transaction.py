@@ -10,61 +10,42 @@ class Transaction(BaseModel):
     is_income: bool
     date: datetime
 
-    sub_category_id: UUID | None
+    tags: list[UUID] = []
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class TransactionCreate(BaseModel):
+class TransactionCreate(Transaction):
     pass
 
 
-class TransactionRead(BaseModel):
+class TransactionRead(Transaction):
     pass
 
 
-class SubCategory(BaseModel):
+class Tag(BaseModel):
     name: str
     description: str
 
-    category_id: UUID | None
-
     model_config = ConfigDict(from_attributes=True)
 
 
-class SubCategoryCreate(BaseModel):
+class TagCreate(Tag):
     pass
 
 
-class SubCategoryRead(BaseModel):
+class TagRead(Tag):
+    id: UUID
     pass
 
 
-class Category(BaseModel):
-    name: str
-    description: str
-    # maybe add colors ?
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class CategoryCreate(BaseModel):
-    pass
-
-
-class CategoryRead(BaseModel):
-    pass
-
-
-class SubCategoryLimit(BaseModel):
-    sub_category: UUID
+class TagLimit(BaseModel):
+    tag: UUID
     limit: float
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class BudgetConfig(BaseModel):
-    sub_category_limits: list[SubCategoryLimit] = []
+    tag_limits: list[TagLimit] = []
 
 
 class Budget(BaseModel):

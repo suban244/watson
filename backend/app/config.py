@@ -3,8 +3,8 @@ from typing import Literal
 
 
 class Settings(BaseSettings):
-    app_env: Literal["local", "prod"] = "local"
-    project_name: str = "Watson"
+    APP_ENV: Literal["local", "prod"] = "local"
+    PROJECT_NAME: str = "Watson"
 
     # Postgres settings
     POSTGRES_USER: str = ""
@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = ""
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = ""
+
+    LOGFIRE_TOKEN: str | None = None
 
 
 settings = Settings()

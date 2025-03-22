@@ -1,13 +1,11 @@
 from schema.transaction import (
     TransactionCreate,
-    SubCategoryCreate,
-    CategoryCreate,
     TransactionRead,
-    SubCategoryRead,
-    CategoryRead,
+    TagCreate,
+    TagRead,
 )
 from fastapi import APIRouter, Depends, HTTPException
-from db.models import Transaction, SubCategory, Category
+from db.models import Transaction, Tag
 from db.session import get_session
 import uuid
 from sqlalchemy import select
@@ -17,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter()
 
 
-@router.post("/transaction", response_model=TransactionRead)
+@router.post("/", response_model=TransactionRead)
 async def create_transaction(
     transaction: TransactionCreate, session: AsyncSession = Depends(get_session)
 ):
@@ -27,33 +25,23 @@ async def create_transaction(
     return new_transaction
 
 
-@router.post("/sub_category", response_model=SubCategoryRead)
-async def create_sub_category(
-    sub_category: SubCategoryCreate, session: AsyncSession = Depends(get_session)
-):
-    new_sub_category = SubCategory(**sub_category.model_dump())
-    session.add(new_sub_category)
+@router.post("/tag", response_model=TagRead)
+async def create_tag(tag: TagCreate, session: AsyncSession = Depends(get_session)):
+    new_tag = Tag(**tag.model_dump())
+    session.add(new_tag)
     await session.commit()
-    return new_sub_category
+    return new_tag
 
 
-@router.post("/category", response_model=CategoryRead)
-async def create_category(
-    category: CategoryCreate, session: AsyncSession = Depends(get_session)
-):
-    new_category = Category(**category.model_dump())
-    session.add(new_category)
-    await session.commit()
-    return new_category
+@router.get("/tag/list", response_model=list[TagRead])
+async def get_tag_list(session: AsyncSession = Depends(get_session)):
+    get_all_tags_query = select(Tag)
+    result = await session.execute(get_all_tags_query)
+    tags = result.scalars().all()
+    return tags
 
 
-@router.get("/category/list", response_model=list[CategoryRead])
-async def get_category_list(session: AsyncSession = Depends(get_session)):
-    categories = await session.execute(select(Category))
-    return categories
-
-
-@router.get("/transaction/{transaction_id}", response_model=TransactionRead)
+@router.get("/{transaction_id}", response_model=TransactionRead)
 async def get_transaction(
     transaction_id: uuid.UUID, session: AsyncSession = Depends(get_session)
 ):
@@ -61,3 +49,11 @@ async def get_transaction(
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return transaction
+
+
+@router.get("/list", response_model=list[TransactionRead])
+async def get_transaction_list(session: AsyncSession = Depends(get_session)):
+    get_all_transactions_query = select(Transaction)
+    result = await session.execute(get_all_transactions_query)
+    transactions = result.scalars().all()
+    return transactions

@@ -6,8 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import func
-from sqlalchemy import Boolean, Float, ForeignKey, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Float, String, Text
 
 
 class Base(DeclarativeBase):
@@ -35,33 +34,11 @@ class PrimaryUUIDTimestamped(PrimaryTimestamped):
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
 
 
-class Category(PrimaryUUIDTimestamped):
-    __tablename__ = "categories"
+class Tag(PrimaryUUIDTimestamped):
+    __tablename__ = "tags"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
-
-    sub_catagories: Mapped[list["SubCategory"]] = relationship(
-        "SubCategory", back_populates="category"
-    )
-
-
-class SubCategory(PrimaryUUIDTimestamped):
-    __tablename__ = "sub_categories"
-
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=True)
-
-    transactions: Mapped[list["Transaction"]] = relationship(
-        "Transaction", back_populates="sub_category"
-    )
-
-    category: Mapped[Category] = relationship(
-        "Category", back_populates="sub_categories"
-    )
-    category_id: Mapped[uuid.UUID] = mapped_column(
-        UUID, ForeignKey("categories.id"), nullable=False
-    )
 
 
 class Transaction(PrimaryUUIDTimestamped):
@@ -73,11 +50,8 @@ class Transaction(PrimaryUUIDTimestamped):
     is_income: Mapped[bool] = mapped_column(Boolean, nullable=False)
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-    sub_category: Mapped[SubCategory] = relationship(
-        "SubCategory", back_populates="transactions"
-    )
-    sub_category_id: Mapped[uuid.UUID] = mapped_column(
-        UUID, ForeignKey("sub_categories.id"), nullable=True
+    tags: Mapped[list[UUID]] = mapped_column(
+        MutableDict.as_mutable(JSONB), nullable=True
     )
 
 

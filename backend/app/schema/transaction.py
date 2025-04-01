@@ -10,7 +10,7 @@ class Transaction(BaseModel):
     is_income: bool
     date: datetime
 
-    tags: list[UUID] = []
+    tags: list[str] = []
 
     model_config = ConfigDict(from_attributes=True)
 

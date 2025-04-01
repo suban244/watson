@@ -7,8 +7,11 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"github.com/suban244/watson/watson-tui/config"
 )
 
@@ -16,10 +19,15 @@ type ViewTransactionScreen struct {
 	failedGettingTransaction bool
 	err                      error
 	transactions             []Transaction
+	table                    *table.Table
 }
 
 func NewViewTransactionsScreen() Screen {
-	return ViewTransactionScreen{}
+	return ViewTransactionScreen{
+		table: table.New().Border(lipgloss.NormalBorder()).Width(80).Headers(
+			"Date", "Title", "Description", "Amount", "Tags",
+		),
+	}
 }
 
 func (m ViewTransactionScreen) Init() tea.Cmd {
@@ -33,6 +41,7 @@ func (m ViewTransactionScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = msg.err
 	case viewTransactionSuccessMsg:
 		m.transactions = msg.transactions
+		m.table = m.table.Rows(transactionListToRows(msg.transactions)...)
 	}
 	return m, nil
 }
@@ -44,11 +53,7 @@ func (m ViewTransactionScreen) View() string {
 	if len(m.transactions) == 0 {
 		return "No transactions found"
 	}
-	var s string
-	for _, t := range m.transactions {
-		s += fmt.Sprintf("Amount: %d\nTitle: %s\nDescription: %s\nDate: %s\n\n", t.Amount, t.Title, t.Description, t.Date)
-	}
-	return s
+	return m.table.Render()
 }
 
 type viewTransactionFailedMsg struct{ err error }
@@ -88,4 +93,24 @@ func createCmdViewTransaction() tea.Cmd {
 
 		return viewTransactionSuccessMsg{transactions: transactions}
 	}
+}
+
+func transactionListToRows(transactions []Transaction) [][]string {
+	var rows [][]string
+	for _, transaction := range transactions {
+		dateFormat := "2006-01-02T15:04:05"
+		date, err := time.Parse(dateFormat, transaction.Date)
+		if err != nil {
+			continue
+		}
+		row := []string{
+			fmt.Sprint(date.Format("2006-01-02")),
+			transaction.Title,
+			transaction.Description,
+			fmt.Sprintf("%.2f", transaction.Amount),
+			fmt.Sprintf("%v", transaction.Tags),
+		}
+		rows = append(rows, row)
+	}
+	return rows
 }

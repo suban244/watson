@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import func
 from sqlalchemy import Boolean, Float, String, Text
@@ -51,7 +51,7 @@ class Transaction(PrimaryUUIDTimestamped):
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     tags: Mapped[list[UUID]] = mapped_column(
-        MutableDict.as_mutable(JSONB), nullable=True
+        MutableList.as_mutable(JSONB), nullable=True
     )
 
 

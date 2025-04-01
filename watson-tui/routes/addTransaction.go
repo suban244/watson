@@ -21,7 +21,7 @@ import (
 type AddTransactionScreen struct {
 	submission_underway bool
 	form                *huh.Form
-	// spinner             *spinner.Spinner
+	message             any
 }
 
 func isFloat(s string) error {
@@ -73,7 +73,7 @@ func NewAddTransactionScreen() Screen {
 						}
 					}
 					return options
-				}, nil).Limit(3),
+				}, nil).Limit(3).Key("tags"),
 			),
 			huh.NewGroup(
 				huh.NewSelect[string]().Options(
@@ -112,12 +112,24 @@ func (m AddTransactionScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if m.form.State == huh.StateCompleted {
-		amount := m.form.GetInt("amount")
+		amountString := m.form.GetString("amount")
+		amount, err := strconv.ParseFloat(amountString, 32)
+		if err != nil {
+			m.message = err
+			return m, tea.Batch(cmds...)
+		}
 		title := m.form.GetString("title")
 		description := m.form.GetString("description")
-		tags := m.form.Get("tags").([]string)
+		tagField := m.form.Get("tags")
+		tags, ok := tagField.([]string)
+		if !ok {
+			m.message = tagField
+		}
+
 		isIncome := m.form.GetBool("isIncome")
-		date := m.form.GetString("date")
+		date_info := m.form.GetString("date")
+		customDate := m.form.GetString("customDate")
+		date := convertDate(date_info, customDate)
 
 		transaction := Transaction{
 			Amount:      amount,
@@ -128,8 +140,10 @@ func (m AddTransactionScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Date:        date,
 		}
 
-		m.submission_underway = true
-		cmds = append(cmds, createCmdAddTransaction(transaction))
+		if !m.submission_underway {
+			cmds = append(cmds, createCmdAddTransaction(transaction))
+			m.submission_underway = true
+		}
 	}
 
 	return m, tea.Batch(cmds...)
@@ -139,16 +153,14 @@ func (m AddTransactionScreen) View() string {
 
 	switch m.form.State {
 	case huh.StateCompleted:
-		if m.submission_underway {
-		}
-		return "Yay"
+		return fmt.Sprintf("%T", m.message)
 	default:
 		return m.form.View()
 	}
 }
 
 type Transaction struct {
-	Amount      int      `json:"amount"`
+	Amount      float64  `json:"amount"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Tags        []string `json:"tags"`
@@ -171,6 +183,7 @@ func createCmdAddTransaction(transaction Transaction) tea.Cmd {
 			return addANewTransactionFailedMsg{Err: err}
 		}
 		u.Path = path.Join(u.Path, "transaction")
+		u.Path = u.Path + "/"
 
 		data, err := json.Marshal(transaction)
 		if err != nil {
@@ -201,4 +214,13 @@ func createCmdAddTransaction(transaction Transaction) tea.Cmd {
 		}
 		return addNewTransactionSuccessMsg{Transaction: responseTransaction}
 	}
+}
+
+func convertDate(date_info string, customDate string) string {
+	if date_info == "today" {
+		return time.Now().Format(time.DateOnly)
+	} else if date_info == "yesterday" {
+		return time.Now().AddDate(0, 0, -1).Format(time.DateOnly)
+	}
+	return customDate
 }

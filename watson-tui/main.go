@@ -5,14 +5,28 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	routes "github.com/suban244/watson/watson-tui/routes"
 )
+
+type Styles struct {
+	BorderColor lipgloss.Color
+}
+
+func DefaultStyles() *Styles {
+	s := new(Styles)
+	s.BorderColor = lipgloss.Color("36")
+
+	return s
+
+}
 
 type model struct {
 	routes []routes.Route
 	stack  []routes.Screen
 
 	cursor int
+	styles *Styles
 }
 
 func initialModel() model {
@@ -30,8 +44,10 @@ func initialModel() model {
 			CreateScreen: routes.NewViewTransactionsScreen,
 		},
 	}
+	styles := DefaultStyles()
 	return model{
 		routes: routes,
+		styles: styles,
 	}
 }
 

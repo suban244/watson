@@ -2,6 +2,11 @@ run_local:
 	@echo "Running in local mode with docker."
 	docker compose up --build --watch
 
+prod:
+	@echo "Running in local mode with docker."
+	docker compose -f prod.yml up --build
+
+
 uv_lock:
 	@echo "Locking dependencies."
 	uv --directory ./backend lock

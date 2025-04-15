@@ -1,4 +1,4 @@
-name: watson-develop
+name: watson
 
 services:
   db:

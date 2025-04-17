@@ -9,9 +9,9 @@ import (
 	"path"
 	"time"
 
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 	"github.com/suban244/watson/watson-tui/config"
 )
 
@@ -19,14 +19,39 @@ type ViewTransactionScreen struct {
 	failedGettingTransaction bool
 	err                      error
 	transactions             []Transaction
-	table                    *table.Table
+	table                    table.Model
 }
 
+var baseStyle = lipgloss.NewStyle().
+	BorderStyle(lipgloss.NormalBorder()).
+	BorderForeground(lipgloss.Color("240"))
+
 func NewViewTransactionsScreen() Screen {
+	columns := []table.Column{
+		{Title: "Date", Width: 20},
+		{Title: "Title", Width: 20},
+		{Title: "Description", Width: 20},
+		{Title: "Amount", Width: 20},
+		{Title: "Tags", Width: 20},
+	}
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
+	s.Selected = s.Selected.
+		Foreground(lipgloss.Color("229")).
+		Background(lipgloss.Color("57")).
+		Bold(false)
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithFocused(true),
+	)
+	t.SetStyles(s)
 	return ViewTransactionScreen{
-		table: table.New().Border(lipgloss.NormalBorder()).Width(80).Headers(
-			"Date", "Title", "Description", "Amount", "Tags",
-		),
+		table: t,
 	}
 }
 
@@ -39,9 +64,18 @@ func (m ViewTransactionScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case viewTransactionFailedMsg:
 		m.failedGettingTransaction = true
 		m.err = msg.err
+
 	case viewTransactionSuccessMsg:
 		m.transactions = msg.transactions
-		m.table = m.table.Rows(transactionListToRows(msg.transactions)...)
+		m.table.SetRows(
+			transactionListToRows(msg.transactions),
+		)
+
+	case tea.KeyMsg:
+		t, cmd := m.table.Update(msg)
+		m.table = t
+		return m, cmd
+
 	}
 	return m, nil
 }
@@ -53,7 +87,7 @@ func (m ViewTransactionScreen) View() string {
 	if len(m.transactions) == 0 {
 		return "No transactions found"
 	}
-	return m.table.Render()
+	return baseStyle.Render(m.table.View()) + "\n"
 }
 
 type viewTransactionFailedMsg struct{ err error }
@@ -95,8 +129,8 @@ func createCmdViewTransaction() tea.Cmd {
 	}
 }
 
-func transactionListToRows(transactions []Transaction) [][]string {
-	var rows [][]string
+func transactionListToRows(transactions []Transaction) []table.Row {
+	var rows []table.Row
 	for _, transaction := range transactions {
 		dateFormat := "2006-01-02T15:04:05"
 		date, err := time.Parse(dateFormat, transaction.Date)

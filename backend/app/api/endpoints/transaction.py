@@ -16,14 +16,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter()
 
 
+async def get_all_tags(session: AsyncSession = Depends(get_session)) -> list[Tag]:
+    get_all_tags_query = select(Tag)
+    result = await session.execute(get_all_tags_query)
+    tags = result.scalars().all()
+    return list(tags)
+
+
 @router.post("/", response_model=TransactionRead)
 async def create_transaction(
-    transaction: TransactionCreate, session: AsyncSession = Depends(get_session)
+    transaction: TransactionCreate,
+    session: AsyncSession = Depends(get_session),
+    tags: list[Tag] = Depends(get_all_tags),
 ):
+    tag_id_to_tag_name_map = {str(tag.id): tag.name for tag in tags}
     new_transaction = Transaction(
         **transaction.model_dump(exclude={"tags"}),
         tags=jsonable_encoder(transaction.tags),
     )
+
+    # ensure all tags are valid
+    for tag in transaction.tags:
+        if tag not in tag_id_to_tag_name_map:
+            raise HTTPException(status_code=400, detail=f"Tag {tag} does not exist")
+
     session.add(new_transaction)
     await session.commit()
     return new_transaction
@@ -38,18 +54,38 @@ async def create_tag(tag: TagCreate, session: AsyncSession = Depends(get_session
 
 
 @router.get("/tag/list/", response_model=list[TagRead])
-async def get_tag_list(session: AsyncSession = Depends(get_session)):
-    get_all_tags_query = select(Tag)
-    result = await session.execute(get_all_tags_query)
-    tags = result.scalars().all()
+async def get_tag_list(tags: list[Tag] = Depends(get_all_tags)):
     return tags
 
 
 @router.get("/list/", response_model=list[TransactionRead])
-async def get_transaction_list(session: AsyncSession = Depends(get_session)):
+async def get_transaction_list(
+    session: AsyncSession = Depends(get_session),
+    tags: list[Tag] = Depends(get_all_tags),
+):
     get_all_transactions_query = select(Transaction)
     result = await session.execute(get_all_transactions_query)
-    transactions = result.scalars().all()
+    db_transactions = result.scalars().all()
+
+    transactions: list[TransactionRead] = []
+    tag_id_to_tag_name_map = {str(tag.id): tag.name for tag in tags}
+    for transaction in db_transactions:
+        transaction_tags = []
+        for tag in transaction.tags:
+            if tag in tag_id_to_tag_name_map:
+                transaction_tags.append(tag_id_to_tag_name_map[tag])
+
+        transactions.append(
+            TransactionRead(
+                amount=transaction.amount,
+                title=transaction.title,
+                description=transaction.description,
+                is_income=transaction.is_income,
+                date=transaction.date,
+                tags=transaction_tags,
+            )
+        )
+
     return transactions
 
 

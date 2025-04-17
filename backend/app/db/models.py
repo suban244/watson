@@ -50,7 +50,7 @@ class Transaction(PrimaryUUIDTimestamped):
     is_income: Mapped[bool] = mapped_column(Boolean, nullable=False)
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-    tags: Mapped[list[UUID]] = mapped_column(
+    tags: Mapped[list[str]] = mapped_column(
         MutableList.as_mutable(JSONB), nullable=True
     )
 

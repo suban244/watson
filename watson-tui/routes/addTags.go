@@ -118,7 +118,7 @@ func getAllTags() tea.Msg {
 	if err != nil {
 		return getAllTagsFailedMsg{Err: err}
 	}
-	u.Path = path.Join(u.Path, "transaction", "tag", "list")
+	u.Path = path.Join(u.Path, "tags", "list")
 
 	client := &http.Client{}
 	res, err := client.Get(u.String())
@@ -156,7 +156,7 @@ func createCmdCreateTag(tag Tag) tea.Cmd {
 		if err != nil {
 			return addANewTagFailedMsg{Err: err}
 		}
-		u.Path = path.Join(u.Path, "transaction", "tag")
+		u.Path = path.Join(u.Path, "tags")
 
 		data, err := json.Marshal(tag)
 		if err != nil {

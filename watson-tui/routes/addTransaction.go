@@ -58,8 +58,6 @@ func NewAddTransactionScreen() Screen {
 				huh.NewInput().Title("Title").Prompt("> ").Key("title").Validate(nonEmpty),
 				huh.NewInput().Title("Description").Prompt("> ").Key("description"),
 				huh.NewConfirm().Title("Is it a Income?").Key("isIncome"),
-			),
-			huh.NewGroup(
 				huh.NewMultiSelect[string]().Title("Tags").OptionsFunc(func() []huh.Option[string] {
 					var options []huh.Option[string]
 					tags := getAllTags()

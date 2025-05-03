@@ -1,8 +1,6 @@
 from schema.transaction import (
     TransactionCreate,
     TransactionRead,
-    TagCreate,
-    TagRead,
 )
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -13,14 +11,9 @@ from sqlalchemy import select
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .tags import get_all_tags
+
 router = APIRouter()
-
-
-async def get_all_tags(session: AsyncSession = Depends(get_session)) -> list[Tag]:
-    get_all_tags_query = select(Tag)
-    result = await session.execute(get_all_tags_query)
-    tags = result.scalars().all()
-    return list(tags)
 
 
 @router.post("/", response_model=TransactionRead)
@@ -43,19 +36,6 @@ async def create_transaction(
     session.add(new_transaction)
     await session.commit()
     return new_transaction
-
-
-@router.post("/tag/", response_model=TagRead)
-async def create_tag(tag: TagCreate, session: AsyncSession = Depends(get_session)):
-    new_tag = Tag(**tag.model_dump())
-    session.add(new_tag)
-    await session.commit()
-    return new_tag
-
-
-@router.get("/tag/list/", response_model=list[TagRead])
-async def get_tag_list(tags: list[Tag] = Depends(get_all_tags)):
-    return tags
 
 
 @router.get("/list/", response_model=list[TransactionRead])

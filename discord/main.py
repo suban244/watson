@@ -1,11 +1,17 @@
 import discord
-from dotenv import load_dotenv
-import os
 from discord.message import Message
-from discord.threads import Thread
-from datetime import datetime
+from agent.mistral_agent import MistralAgent
+from agent.tools.add_expense import add_expense
+from core.config import settings
+import logfire
 
-load_dotenv()
+logfire.configure(
+    token=settings.LOGFIRE_TOKEN,
+    service_name="discord-bot",
+    send_to_logfire="if-token-present",
+)
+
+mistral_agent = MistralAgent(api_key=settings.MISTRAL_API_KEY, tools=[add_expense])
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -20,24 +26,15 @@ async def on_ready():
 
 @client.event
 async def on_message(message: Message):
-    channel_id = os.getenv("SOURCE_CHANNEL_ID", "")
-    if str(message.channel.id) != channel_id:
+    if str(message.channel.id) != settings.SOURCE_CHANNEL_ID:
         return
 
     if message.author == client.user:
         return
 
-    d = datetime.now()
-    d.strftime("%Y-%m-%d %H:%M:%S")
-
-    thread: Thread = await message.create_thread(
-        name=f"Thread-{d}",
-        auto_archive_duration=60,
-    )
-    await thread.send("This is a thread message")
-
-    if message.content.startswith("$hello"):
-        await message.channel.send("Hello!")
+    await message.add_reaction("👀")
+    response = await mistral_agent.process_input(message.content)
+    await message.channel.send(response)
 
 
-client.run(os.getenv("DISCORD_TOKEN", ""))
+client.run(settings.DISCORD_TOKEN)

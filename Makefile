@@ -1,6 +1,7 @@
 run_local:
 	@echo "Running in local mode with docker."
-	docker compose up --build --watch
+	docker compose -f local.yml up --build --watch
+
 
 prod:
 	@echo "Running in local mode with docker."

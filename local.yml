@@ -1,0 +1,19 @@
+name: watson-bot
+
+services:
+  discord: &discord
+    build:
+      context: ./discord
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./discord
+          target: /app
+        - action: rebuild
+          path: ./discord/pyproject.toml
+    env_file:
+      - ./discord/.env
+
+volumes:
+  db-data:

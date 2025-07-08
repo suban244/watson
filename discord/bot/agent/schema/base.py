@@ -4,6 +4,12 @@ from mistralai.models.function import Function as MistralFunction
 from typing import Literal
 
 # from mistralai.models.functiontool import FunctionTool as MistralFunctionTool
+from openai.types.chat.chat_completion_tool_param import (
+    ChatCompletionToolParam as OpenAIFunction,
+)
+from openai.types.shared_params.function_definition import (
+    FunctionDefinition as OpenAIFunctionDefinition,
+)
 from typing import Any
 from collections.abc import Callable, Coroutine
 
@@ -72,3 +78,24 @@ class FunctionTool(BaseModel):
             strict=self.strict_config,
         )
         return MistralTool(function=tool, type="function")
+
+    def to_openai_function(self) -> OpenAIFunction:
+        required = (
+            list(k for k, v in (self.parameters or {}).items() if v.required)
+            if self.parameters
+            else []
+        )
+        function_definition = OpenAIFunctionDefinition(
+            name=self.name,
+            description=self.description,
+            parameters={
+                "type": "object",
+                "properties": {
+                    k: v.model_dump(exclude_none=True, exclude={"required"})
+                    for k, v in (self.parameters or {}).items()
+                },
+                "required": required,
+            },
+            strict=self.strict_config,
+        )
+        return OpenAIFunction(function=function_definition, type="function")

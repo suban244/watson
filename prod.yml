@@ -1,4 +1,4 @@
-name: watson
+name: watson-bot
 
 services:
   db:
@@ -9,22 +9,19 @@ services:
       - db-data:/var/lib/postgresql/data
     env_file:
       - .env
-
-  backend: &backend
+  discord: &discord
     build:
-      context: ./backend
+      context: ./discord
       dockerfile: Dockerfile
     develop:
       watch:
-        - action: sync
-          path: ./backend
+        - action: sync+restart
+          path: ./discord
           target: /app
         - action: rebuild
-          path: ./backend/pyproject.toml
-    ports:
-      - "8000:8000"
+          path: ./discord/pyproject.toml
     env_file:
-      - .env
+      - ./discord/.env
 
 volumes:
   db-data:

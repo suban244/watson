@@ -1,7 +1,16 @@
+
 run_local:
 	@echo "Running in local mode with docker."
 	docker compose -f local.yml up --build --watch
 
+
+# DOES NOT WORK
+.ONESHELL:
+venv: ${PWD}/discord/.venv/bin/activate
+	@echo "Activating Virtual Environment"
+	source $(PWD)/discord/.venv/bin/activate && python --version
+	python --version
+	@echo done
 
 prod:
 	@echo "Running in local mode with docker."

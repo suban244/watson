@@ -1,14 +1,41 @@
 from pydantic import BaseModel
 from mistralai.models.tool import Tool as MistralTool
 from mistralai.models.function import Function as MistralFunction
+from typing import Literal
 
 # from mistralai.models.functiontool import FunctionTool as MistralFunctionTool
 from typing import Any
 from collections.abc import Callable, Coroutine
 
 
+class SuccessComponent(BaseModel):
+    pass
+
+
+class FailureComponent(BaseModel):
+    error: str
+
+
+Component = SuccessComponent | FailureComponent
+
+
+class ComponentEvent(BaseModel):
+    event: Literal["ComponentEvent"]
+    component: Component
+
+
+class MessageEvent(BaseModel):
+    event: Literal["MessageEvent"]
+    content: str
+
+
+Event = ComponentEvent | MessageEvent
+
+
 class ToolResponse(BaseModel):
     content: str
+    components: list[Component] | None = None
+    end_action: bool = False
 
 
 class ParameterData(BaseModel):

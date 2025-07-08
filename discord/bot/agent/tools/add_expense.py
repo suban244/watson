@@ -1,4 +1,4 @@
-from agent.schema import FunctionTool, ToolResponse, ParameterData
+from agent.schema.base import FunctionTool, ToolResponse, ParameterData
 from core.schema import ExpenseCategory, Expense
 from datetime import datetime
 from services.sheet import expense_sheet

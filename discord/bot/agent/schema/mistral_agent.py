@@ -1,8 +1,9 @@
-from agent.schema import FunctionTool, ToolResponse
+from agent.schema.base import FunctionTool, ToolResponse, ComponentEvent, MessageEvent
 
 from mistralai import Mistral
 from mistralai.models.chatcompletionrequest import Messages
 from mistralai.models.usermessage import UserMessage
+from mistralai.models.systemmessage import SystemMessage
 from mistralai.models.assistantmessage import AssistantMessageContent
 from mistralai.models.toolmessage import ToolMessage
 from mistralai.models.assistantmessage import AssistantMessage
@@ -14,18 +15,41 @@ from mistralai.models.toolcall import ToolCall
 import logfire
 from typing import Any
 import json
+import asyncio
+from collections.abc import AsyncGenerator
+
+from enum import StrEnum
+
+
+class MistralModel(StrEnum):
+    SMALL = "mistral-small-latest"
+    MEDIUM = "mistral-medium-2505"
+    MINISTRAL_3B = "ministral-3b-latest"
+    MINISTRAL_8B = "ministral-8b-latest"
 
 
 class MistralAgent:
-    def __init__(self, api_key: str, tools: list[FunctionTool] | None = None):
+    def __init__(
+        self,
+        api_key: str,
+        tools: list[FunctionTool] | None = None,
+        system_prompt: str | None = None,
+        model: MistralModel = MistralModel.SMALL,
+    ):
         self.client = Mistral(api_key=api_key)
+        self.system_prompt = (
+            system_prompt
+            or "You are a helpful assistant that can execute tools to assist the user."
+        )
         self.completion_args: CompletionArgsTypedDict = {
             "temperature": 0.7,
             "max_tokens": 2048,
             "top_p": 1,
         }
         self.tools: list[FunctionTool] = tools if tools is not None else []
-        self.model = "open-mistral-nemo"
+        self.model: MistralModel = model
+
+        self.max_loops = 5  # Maximum number of loops to prevent infinite loops
 
     def mistral_tools(self) -> list[MistralTool]:
         return [tool.to_mistral_tool() for tool in (self.tools or [])]
@@ -78,19 +102,29 @@ class MistralAgent:
     async def chat_complete(
         self,
         messages: list[Messages],
-        model: str = "open-mistral-nemo",
+        model: str = "mistral-small-latest",
         tools: list[MistralTool] | None = None,
+        system_message: SystemMessage | None = None,
     ) -> AssistantMessage:
         response = await self.client.chat.complete_async(
-            messages=messages,
+            messages=([system_message] if system_message else []) + messages,
             model=model,
             tools=tools,
             **self.completion_args,
         )
         return response.choices[0].message
 
+    async def tool_call_task(self, tool_call: ToolCall) -> ToolResponse:
+        tool_name = tool_call.function.name
+        tool_arguments: dict[str, Any] | str = tool_call.function.arguments
+
+        tool_response = await self.execute_tool(tool_name, tool_arguments)
+        return tool_response
+
     @logfire.instrument("mistral-process-request: {input=}", record_return=True)
-    async def process_input(self, input: str) -> str:
+    async def process_input(
+        self, input: str
+    ) -> AsyncGenerator[MessageEvent | ComponentEvent, None]:
         history: list[Messages] = []
         history.append(
             UserMessage(
@@ -98,23 +132,34 @@ class MistralAgent:
                 role="user",
             )
         )
-        try:
-            tools = self.mistral_tools()
-            model = self.model
+
+        loop_count = 0
+        while loop_count < self.max_loops:
+            loop_count += 1
+
+            system_message = SystemMessage(
+                content=self.system_prompt,
+                role="system",
+            )
 
             response = await self.chat_complete(
+                system_message=system_message,
                 messages=history,
-                model=model,
-                tools=tools,
+                model=self.model.value,
+                tools=self.mistral_tools() if loop_count < self.max_loops else None,
             )
 
             content = self._mistral_extract_content(response.content)
             tool_calls = response.tool_calls
 
             if not tool_calls:
-                return content or "<No Response>"
+                if content:
+                    yield MessageEvent(
+                        event="MessageEvent",
+                        content=content,
+                    )
+                return
 
-            print("Tool calls detected:")
             history.append(
                 AssistantMessage(
                     content=content,
@@ -122,28 +167,32 @@ class MistralAgent:
                     role="assistant",
                 )
             )
-            for tool_call in tool_calls:
-                tool_name = tool_call.function.name
-                tool_arguments: dict[str, Any] | str = tool_call.function.arguments
 
-                tool_response = await self.execute_tool(tool_name, tool_arguments)
-
-                if tool_response.content:
-                    history.append(
-                        ToolMessage(
-                            content=tool_response.content,
-                            tool_call_id=tool_call.id,
-                            name=tool_name,
-                            role="tool",
-                        )
-                    )
-
-            response = await self.chat_complete(
-                messages=history,
-                model=model,
+            tool_call_tasks = [
+                self.tool_call_task(tool_call) for tool_call in tool_calls
+            ]
+            tool_call_responses = await asyncio.gather(
+                *tool_call_tasks, return_exceptions=True
             )
-            return self._mistral_extract_content(response.content) or "<No Response>"
+            end = False
+            for tool_call, tool_response in zip(tool_calls, tool_call_responses):
+                if isinstance(tool_response, BaseException):
+                    logfire.error(f"Error executing tool: {str(tool_response)}")
+                    continue
+                for component in tool_response.components or []:
+                    yield ComponentEvent(
+                        event="ComponentEvent",
+                        component=component,
+                    )
+                tool_response_message = ToolMessage(
+                    content=tool_response.content or "<no response>",
+                    tool_call_id=tool_call.id,
+                    name=tool_call.function.name,
+                    role="tool",
+                )
+                history.append(tool_response_message)
+                if tool_response.end_action:
+                    end = True
 
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            return ""
+            if end:
+                return

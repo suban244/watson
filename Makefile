@@ -34,12 +34,12 @@ makemigrations:
 		echo "No message provided, Use: make makemigrations message=<message>"; \
 	else \
 		echo "Using custom message: $(message)"; \
-		uv run --directory ./backend/app --env-file ../../.env alembic revision --autogenerate -m "$(message)"; \
+		uv run --directory ./discord/bot --env-file ../../.env alembic revision --autogenerate -m "$(message)"; \
 	fi
 
 migrate:
 	@echo "Migrating database."
-	uv run --directory ./backend/app --env-file ../../.env alembic upgrade head
+	uv run --directory ./discord/bot --env-file ../../.env alembic upgrade head
 
 
 downgrade:

@@ -1,9 +1,20 @@
 from pydantic_settings import BaseSettings
+from typing import Literal
 
 
 class Settings(BaseSettings):
+    APP_ENV: Literal["local", "prod"] = "local"
+    PROJECT_NAME: str = "Watson"
+
     DISCORD_TOKEN: str
     SOURCE_CHANNEL_ID: str
+
+    # Postgres settings
+    POSTGRES_USER: str = ""
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_HOST: str = ""
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str = ""
 
     MISTRAL_API_KEY: str
 
@@ -13,7 +24,6 @@ class Settings(BaseSettings):
     LOGFIRE_TOKEN: str
 
     class Config:
-        env_file = ".env"
         env_file_encoding = "utf-8"
 
 

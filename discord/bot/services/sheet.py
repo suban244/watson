@@ -1,4 +1,3 @@
-import os
 import gspread
 from google.oauth2.service_account import Credentials
 from core.config import settings
@@ -16,7 +15,6 @@ class SheetService:
             "https://spreadsheets.google.com/feeds",
             "https://www.googleapis.com/auth/drive",
         ]
-        print(os.listdir("."))
 
         creds = Credentials.from_service_account_file(
             filename=credentials_path, scopes=scope

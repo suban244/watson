@@ -21,7 +21,7 @@ services:
         - action: rebuild
           path: ./discord/pyproject.toml
     env_file:
-      - ./discord/.env
+      - .env
 
 volumes:
   db-data:

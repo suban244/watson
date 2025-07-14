@@ -1,17 +1,15 @@
 from agent.schema.base import FunctionTool, ToolResponse, ParameterData
-from core.schema import ExpenseCategory, Expense
+from core.schema import ExpenseCategory, Transaction
 from datetime import datetime
-from services.sheet import expense_sheet
-
-from datetime import date
+from services.db_proxy import db_proxy
 
 
-def date_from_string(date_str: str | None) -> date | None:
+def date_from_string(date_str: str | None) -> datetime | None:
     """Convert a date string in YYYY-MM-DD format to a date object."""
     try:
         if not date_str:
-            return datetime.now().date()
-        return datetime.strptime(date_str, "%Y-%m-%d").date()
+            return datetime.now()
+        return datetime.strptime(date_str, "%Y-%m-%d")
     except ValueError:
         return None
 
@@ -31,13 +29,15 @@ async def add_expense_function(
     if not date_obj:
         return ToolResponse(content="Invalid date format. Please use YYYY-MM-DD.")
 
-    expense = Expense(
+    expense = Transaction(
+        amount=amount,
         date=date_obj,
         title=title,
-        amount=amount,
         category=expense_category,
+        is_expense=True,
     )
-    expense_sheet.append_row(expense)
+    # expense_sheet.append_row(expense)
+    await db_proxy.add_transaction(expense)
 
     return ToolResponse(
         content=f"Expense added: {expense.title} on {expense.date} for {expense.amount} in category {expense.category.value}."
@@ -49,6 +49,11 @@ add_expense = FunctionTool(
     description="Add an expense to the budget.",
     parameters={
         "title": ParameterData(type="string", description="The title of the expense."),
+        "description": ParameterData(
+            type="string",
+            description="A brief description of the expense.",
+            required=False,
+        ),
         "amount": ParameterData(
             type="number", description="The amount of the expense."
         ),

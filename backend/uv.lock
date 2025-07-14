@@ -1035,43 +1035,6 @@ wheels = [
 ]
 
 [[package]]
-name = "uv-fastapi-example"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "alembic" },
-    { name = "asyncpg" },
-    { name = "fastapi", extra = ["standard"] },
-    { name = "logfire", extra = ["fastapi", "sqlalchemy"] },
-    { name = "psycopg", extra = ["c", "pool"] },
-    { name = "pydantic-settings" },
-    { name = "sqlalchemy" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pre-commit" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", specifier = ">=1.15.1" },
-    { name = "asyncpg", specifier = "==0.30.0" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.112.1" },
-    { name = "logfire", extras = ["fastapi", "sqlalchemy"], specifier = "==3.9.0" },
-    { name = "psycopg", extras = ["c", "pool"], specifier = ">=3.2.5" },
-    { name = "pydantic-settings", specifier = ">=2.8.1" },
-    { name = "sqlalchemy", specifier = ">=2.0.38" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pre-commit", specifier = ">=4.1.0" },
-    { name = "ruff", specifier = ">=0.9.10" },
-]
-
-[[package]]
 name = "uvicorn"
 version = "0.34.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1163,6 +1126,43 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f2/e1/0025d365cf6248c4d1ee4c3d2e3d373bdd3f6aff78ba4298f97b4fad2740/watchfiles-1.0.4-cp313-cp313-musllinux_1_1_x86_64.whl", hash = "sha256:308ac265c56f936636e3b0e3f59e059a40003c655228c131e1ad439957592303", size = 611911 },
     { url = "https://files.pythonhosted.org/packages/55/55/035838277d8c98fc8c917ac9beeb0cd6c59d675dc2421df5f9fcf44a0070/watchfiles-1.0.4-cp313-cp313-win32.whl", hash = "sha256:aee397456a29b492c20fda2d8961e1ffb266223625346ace14e4b6d861ba9c80", size = 271152 },
     { url = "https://files.pythonhosted.org/packages/f0/e5/96b8e55271685ddbadc50ce8bc53aa2dff278fb7ac4c2e473df890def2dc/watchfiles-1.0.4-cp313-cp313-win_amd64.whl", hash = "sha256:d6097538b0ae5c1b88c3b55afa245a66793a8fec7ada6755322e465fb1a0e8cc", size = 285216 },
+]
+
+[[package]]
+name = "watson-fastapi"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "fastapi", extra = ["standard"] },
+    { name = "logfire", extra = ["fastapi", "sqlalchemy"] },
+    { name = "psycopg", extra = ["c", "pool"] },
+    { name = "pydantic-settings" },
+    { name = "sqlalchemy" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pre-commit" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alembic", specifier = ">=1.15.1" },
+    { name = "asyncpg", specifier = "==0.30.0" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.112.1" },
+    { name = "logfire", extras = ["fastapi", "sqlalchemy"], specifier = "==3.9.0" },
+    { name = "psycopg", extras = ["c", "pool"], specifier = ">=3.2.5" },
+    { name = "pydantic-settings", specifier = ">=2.8.1" },
+    { name = "sqlalchemy", specifier = ">=2.0.38" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pre-commit", specifier = ">=4.1.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
 ]
 
 [[package]]

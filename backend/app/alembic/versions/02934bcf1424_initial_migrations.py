@@ -1,8 +1,8 @@
-"""initial commit
+"""Initial migrations
 
-Revision ID: 4818b1e7d985
+Revision ID: 02934bcf1424
 Revises:
-Create Date: 2025-03-07 21:41:29.392437
+Create Date: 2025-07-14 15:37:03.453132
 
 """
 
@@ -10,7 +10,7 @@ from collections.abc import Sequence
 
 
 # revision identifiers, used by Alembic.
-revision: str = "4818b1e7d985"
+revision: str = "02934bcf1424"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

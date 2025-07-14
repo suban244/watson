@@ -3,6 +3,18 @@ from enum import StrEnum
 import datetime
 
 
+class IncomeCategory(StrEnum):
+    SALARY = "salary"
+
+    @classmethod
+    def from_string(cls, value: str) -> "IncomeCategory | None":
+        """Convert a string to an IncomeCategory enum."""
+        try:
+            return cls(value)
+        except ValueError:
+            return None
+
+
 class ExpenseCategory(StrEnum):
     HOME_EXPENSES = "home_expenses"
     OFFICE_COMMUTE = "office_commute"
@@ -20,13 +32,21 @@ class ExpenseCategory(StrEnum):
             return None
 
 
-class Expense(BaseModel):
-    date: datetime.date = Field(
+class Transaction(BaseModel):
+    amount: float = Field(..., description="Amount of the Transaction")
+    title: str = Field(..., description="Title of the Transaction")
+    description: str | None = Field(
+        default=None, description="Description of the Transaction"
+    )
+    date: datetime.datetime = Field(
         ..., description="Date of the expense in YYYY-MM-DD format"
     )
-    title: str = Field(..., description="Title of the expense")
-    amount: float = Field(..., description="Amount of the expense")
-    category: ExpenseCategory = Field(..., description="Category of the expense")
+    category: ExpenseCategory | IncomeCategory = Field(
+        ..., description="Category of the Transaction"
+    )
+    is_expense: bool = Field(
+        default=True, description="True if this is an expense, False if it's income"
+    )
 
     def to_sheet_row(self) -> list[str | int | float]:
         """Convert the expense to a list suitable for appending to a sheet."""

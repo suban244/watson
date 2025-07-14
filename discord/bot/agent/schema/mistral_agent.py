@@ -1,3 +1,4 @@
+import logfire.experimental
 from agent.schema.base import FunctionTool, ToolResponse, ComponentEvent, MessageEvent
 
 from mistralai import Mistral
@@ -69,7 +70,7 @@ class MistralAgent:
                     response = await tool.target_function(**parsed_arguments)
                     return response
                 except Exception as e:
-                    raise e
+                    logfire.exception(f"Error running tool: {tool_name}", error=e)
                     return ToolResponse(
                         content=f"Error executing tool {tool_name}: {str(e)}"
                     )

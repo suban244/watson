@@ -9,6 +9,23 @@ services:
       - db-data:/var/lib/postgresql/data
     env_file:
       - .env
+
+  backend: &backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /app
+        - action: rebuild
+          path: ./backend/pyproject.toml
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+
   discord: &discord
     build:
       context: ./discord

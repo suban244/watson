@@ -2,6 +2,7 @@ from agent.schema.mistral_agent import MistralAgent, MistralModel
 from core.config import settings
 from agent.tools.add_expense import add_expense
 from agent.tools.end_action import return_action
+from agent.tools.query_database import query_database
 
 PROMPT = """You are a finance agent that helps users manage their expenses. You can add expenses to a Google Sheet
 The currency is NPR (Nepalese Rupee).
@@ -22,7 +23,7 @@ Here is your workflow for basic actions
 
 base_finance_agent = MistralAgent(
     api_key=settings.MISTRAL_API_KEY,
-    tools=[add_expense, return_action],
+    tools=[add_expense, query_database, return_action],
     system_prompt=PROMPT,
     model=MistralModel.MEDIUM,
 )

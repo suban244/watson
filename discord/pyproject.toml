@@ -7,8 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.16.3",
     "discord-py>=2.5.2",
-    "google-auth>=2.40.3",
-    "gspread>=6.2.1",
     "logfire>=3.21.1",
     "mistralai>=1.8.2",
     "openai>=1.93.1",
@@ -21,5 +19,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pre-commit>=4.2.0",
+    "ruff>=0.12.3",
     "ty>=0.0.1a14",
 ]

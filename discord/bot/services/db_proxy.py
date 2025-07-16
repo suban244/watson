@@ -15,5 +15,10 @@ class DB_Proxy_Hook:
         )
         return response.json()
 
+    @logfire.instrument("run_sql", record_return=True)
+    async def run_sql(self, query: str):
+        response = await self.client.post("/sql/", json={"query": query})
+        return response.json()
+
 
 db_proxy = DB_Proxy_Hook(db_url="http://backend:8000/api/v1/")

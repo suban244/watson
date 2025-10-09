@@ -1,4 +1,3 @@
-from agent.schema.base import FunctionTool, ToolResponse, ParameterData
 from services.db_proxy import db_proxy
 
 DDL_TRANSACTION_TABLE = """\
@@ -18,24 +17,17 @@ CREATE TABLE public.transactions (
 """
 
 
-async def query_database_function(plan: str, query: str, **kwargs) -> ToolResponse:
+async def query_database_function(plan: str, query: str) -> str:
+    """Run Sql query on the transaction table
+    {TABLE_SCHEMA}
+    """.format(TABLE_SCHEMA=DDL_TRANSACTION_TABLE)
     try:
         result = await db_proxy.run_sql(query)
-        return ToolResponse(content=result)
+        return result
     except Exception as e:
-        return ToolResponse(content=f"Error executing query: {str(e)}")
+        return str(e)
 
 
-query_database = FunctionTool(
-    name="query_database",
-    description=f"Run SQL queries on the data base. Here are the different tables available to you:  \n{DDL_TRANSACTION_TABLE}\n ",
-    parameters={
-        "query": ParameterData(type="string", description="The SQL query to execute."),
-        "plan": ParameterData(
-            type="string",
-            description="Think about the query and plan it before executing.",
-        ),
-    },
-    strict_config=False,
-    target_function=query_database_function,
+query_function_description = (
+    f"Run SQL query on transaction table {DDL_TRANSACTION_TABLE}"
 )

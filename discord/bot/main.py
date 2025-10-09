@@ -2,19 +2,15 @@ import discord
 from discord.message import Message
 from core.config import settings
 import logfire
-from agent.schema.base import (
-    ComponentEvent,
-    MessageEvent,
-    SuccessComponent,
-    FailureComponent,
-)
-from agent.base_finance_agent import base_finance_agent
+
+from agent.base_finance_agent import finance_agent, Context
 
 logfire.configure(
     token=settings.LOGFIRE_TOKEN,
     service_name="discord-bot",
     send_to_logfire="if-token-present",
 )
+logfire.instrument_pydantic_ai()
 
 
 intents = discord.Intents.default()
@@ -36,21 +32,12 @@ async def on_message(message: Message):
     if message.author == client.user:
         return
 
+    context = Context(message=message)
+
     await message.add_reaction("👀")
-    response = base_finance_agent.process_input(message.content)
-    async for event in response:
-        match event:
-            case MessageEvent(content=content):
-                await message.channel.send(content)
-            case ComponentEvent(component=component):
-                if isinstance(component, SuccessComponent):
-                    await message.add_reaction("✅")
-                elif isinstance(component, FailureComponent):
-                    await message.add_reaction("❌")
-                else:
-                    logfire.error(f"Unknown component type: {component}")
-            case _:
-                logfire.error(f"Unknown event type: {event}")
+    response = await finance_agent.run(message.content, deps=context)
+    if context.send_final_response:
+        await message.channel.send(response.output)
 
 
 client.run(settings.DISCORD_TOKEN)

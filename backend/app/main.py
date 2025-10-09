@@ -9,6 +9,7 @@ logfire.configure(
     send_to_logfire="if-token-present",
     environment=settings.APP_ENV,
     scrubbing=False,
+    service_name="web-server",
 )
 
 logfire.instrument_fastapi(app, capture_headers=True)

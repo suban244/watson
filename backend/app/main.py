@@ -2,6 +2,7 @@ import logfire
 from config import settings
 from fastapi import FastAPI
 from api import router as api_router
+from tasks import add
 
 app = FastAPI()
 logfire.configure(
@@ -18,6 +19,12 @@ logfire.instrument_fastapi(app, capture_headers=True)
 @app.get("/")
 def read_root():
     return {"Hello": "Welcome To Watson"}
+
+
+@app.get("/tasks/")
+def task():
+    add.delay(4, 6)
+    return {"status": "Task added"}
 
 
 app.include_router(api_router, prefix="/api/v1")

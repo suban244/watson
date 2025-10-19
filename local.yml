@@ -10,6 +10,9 @@ services:
     env_file:
       - .env
 
+  redis:
+    image: redis:6
+
   backend: &backend
     build:
       context: ./backend
@@ -23,22 +26,41 @@ services:
           path: ./backend/pyproject.toml
     ports:
       - "8000:8000"
+    command: /app/start.sh
     env_file:
       - .env
 
-  discord: &discord
-    build:
-      context: ./discord
-      dockerfile: Dockerfile
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./discord
-          target: /app
-        - action: rebuild
-          path: ./discord/pyproject.toml
-    env_file:
-      - .env
+  worker:
+    <<: *backend
+    image: worker
+    depends_on:
+      - db
+      - redis
+    ports: []
+    command: /app/start-worker.sh
+
+  # flower:
+  #   <<: *backend
+  #   image: flower
+  #   ports:
+  #     - "5555:5555"
+  #   env_file:
+  #     - .env
+  #   command: /start-flower
+
+  # discord: &discord
+  #   build:
+  #     context: ./discord
+  #     dockerfile: Dockerfile
+  #   develop:
+  #     watch:
+  #       - action: sync+restart
+  #         path: ./discord
+  #         target: /app
+  #       - action: rebuild
+  #         path: ./discord/pyproject.toml
+  #   env_file:
+  #     - .env
 
 volumes:
   db-data:

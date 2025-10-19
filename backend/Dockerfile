@@ -16,5 +16,10 @@ RUN \
 
 COPY ./app /app/app
 
+COPY start.sh .
+RUN chmod +x ./start.sh
 
-ENTRYPOINT ["/app/.venv/bin/fastapi", "run", "app/main.py", "--port", "8000", "--host", "0.0.0.0", "--reload"]
+COPY celery/worker/start.sh ./start-worker.sh
+RUN chmod +x ./start-worker.sh
+
+ENV PYTHONPATH=/app

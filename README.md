@@ -12,4 +12,9 @@ No particular reason other than, i could not figure out a proper way of syncing 
 
 ```
 uv run --env-file ../../.env  alembic revision --autogenerate -m "Create Transaction Tables"
+- notifications of spendings - easiest
+- Todolist + remainder hybrid
+- budgets
+- RAG Over personal notes of obsidian
+- Handle recepts
 ```

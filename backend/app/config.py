@@ -13,7 +13,10 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = ""
 
+    CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
+
     LOGFIRE_TOKEN: str | None = None
 
 
-settings = Settings()
+settings = Settings()  # type: ignore

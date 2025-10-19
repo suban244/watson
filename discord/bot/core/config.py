@@ -18,9 +18,6 @@ class Settings(BaseSettings):
 
     MISTRAL_API_KEY: str
 
-    EXPENSE_SHEETS_CREDENTIALS_PATH: str
-    EXPENSE_SHEET_NAME: str
-
     LOGFIRE_TOKEN: str
 
     BACKEND_SERVICE_API_URL: str

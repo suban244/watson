@@ -16,7 +16,10 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = ""
 
+    CELERY_BROKER_URL: str
+
     MISTRAL_API_KEY: str
+    OPENROUTER_API_KEY: str
 
     LOGFIRE_TOKEN: str
 

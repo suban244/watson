@@ -41,6 +41,10 @@ class Context(BaseModel):
 model = MistralModel(
     "mistral-medium-2508", provider=MistralProvider(api_key=settings.MISTRAL_API_KEY)
 )
+# model = OpenAIModel(
+#     "qwen/qwen3-235b-a22b:free",
+#     provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
+# )
 
 finance_agent = Agent(
     model=model,

@@ -1,3 +1,4 @@
+from services.messaging import messaging_service
 import logfire
 from config import settings
 from fastapi import FastAPI
@@ -23,7 +24,8 @@ def read_root():
 
 @app.get("/tasks/")
 def task():
-    add.delay(4, 6)
+    add.delay(4, 6)  # type: ignore
+    messaging_service.send_message("New task added: add(4, 6)", channel="default")
     return {"status": "Task added"}
 
 

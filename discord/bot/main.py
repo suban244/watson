@@ -1,4 +1,7 @@
+import asyncio
+from redis.asyncio.client import Redis
 import discord
+from discord.utils import setup_logging
 from discord.message import Message
 from core.config import settings
 import logfire
@@ -40,4 +43,50 @@ async def on_message(message: Message):
         await message.channel.send(response.output)
 
 
-client.run(settings.DISCORD_TOKEN)
+async def start_discord_bot():
+    setup_logging()
+    async with client:
+        await client.start(settings.DISCORD_TOKEN)
+
+
+async def check_task_queue():
+    async_redis = Redis.from_url(settings.CELERY_BROKER_URL)
+    pubsub = async_redis.pubsub()
+    await pubsub.subscribe("default")
+
+    try:
+        while True:
+            try:
+                message = await pubsub.get_message(
+                    ignore_subscribe_messages=True, timeout=1.0
+                )
+                if message:
+                    logfire.info(
+                        f"Received message from Redis Pub/Sub: {message['data']}"
+                    )
+                    channel = client.get_channel(int(settings.SOURCE_CHANNEL_ID))
+                    if channel:
+                        await channel.send(message["data"].decode())  # type: ignore
+            except Exception as e:
+                logfire.error(f"Error processing Redis Pub/Sub message: {e}")
+    finally:
+        await pubsub.unsubscribe()
+        await async_redis.close()
+
+
+async def main():
+    tasks = [
+        start_discord_bot(),
+        check_task_queue(),
+    ]
+    try:
+        await asyncio.gather(*tasks)
+    except KeyboardInterrupt:
+        logfire.info("Shutting down...")
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -1,9 +1,14 @@
 from pydantic_ai import Agent, RunContext, Tool
 from discord.message import Message
 from pydantic import BaseModel
-from pydantic_ai.models.mistral import MistralModel
+from zoneinfo import ZoneInfo
+
+# from pydantic_ai.models.mistral import MistralModel
 from core.schema import ExpenseCategory, Transaction
-from pydantic_ai.providers.mistral import MistralProvider
+
+# from pydantic_ai.providers.mistral import MistralProvider
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openrouter import OpenRouterProvider
 from core.config import settings
 from datetime import datetime
 from services.db_proxy import db_proxy
@@ -12,7 +17,11 @@ from agent.tools.query_database import (
     query_function_description,
 )
 
-PROMPT = """You are a finance agent that helps users manage their expenses. You can add expenses to a Google Sheet
+
+def instructions() -> str:
+    date_today = datetime.now(ZoneInfo("Asia/Kathmandu")).date()
+    PROMPT = f"""\
+You are a finance agent that helps users manage their expenses.
 The currency is NPR (Nepalese Rupee).
 
 Domain Keywords:
@@ -27,7 +36,10 @@ Here is your workflow for basic actions
             - No need to ask for the date if not provided
         2. Call the `add_expense` tool with the extracted information.
         3. Call the `return_action` tool with success set to true and no reason.
+
+Date Today: {date_today}
 """
+    return PROMPT
 
 
 class Context(BaseModel):
@@ -38,17 +50,17 @@ class Context(BaseModel):
         arbitrary_types_allowed = True
 
 
-model = MistralModel(
-    "mistral-medium-2508", provider=MistralProvider(api_key=settings.MISTRAL_API_KEY)
-)
-# model = OpenAIModel(
-#     "qwen/qwen3-235b-a22b:free",
-#     provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
+# model = MistralModel(
+#     "mistral-medium-2508", provider=MistralProvider(api_key=settings.MISTRAL_API_KEY)
 # )
+model = OpenAIModel(
+    "z-ai/glm-4.5-air:free",
+    provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
+)
 
 finance_agent = Agent(
     model=model,
-    instructions=PROMPT,
+    instructions=instructions,
     deps_type=Context,
     tools=[
         Tool[Context](
@@ -61,11 +73,14 @@ finance_agent = Agent(
 
 
 def date_from_string(date_str: str | None) -> datetime | None:
-    """Convert a date string in YYYY-MM-DD format to a date object."""
+    NEPAL_TZ = ZoneInfo("Asia/Kathmandu")
+    """Convert a date string in YYYY-MM-DD format to a timezone-aware datetime object (Nepal time)."""
     try:
         if not date_str:
-            return datetime.now()
-        return datetime.strptime(date_str, "%Y-%m-%d")
+            return datetime.now(tz=NEPAL_TZ)
+
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        return dt.replace(tzinfo=NEPAL_TZ)
     except ValueError:
         return None
 

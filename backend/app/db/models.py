@@ -18,10 +18,16 @@ class PrimaryTimestamped(Base):
     __abstract__ = True
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now, server_default=func.now(), nullable=False
+        DateTime(timezone=True),
+        default=datetime.now,
+        server_default=func.now(),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now, onupdate=func.now(), nullable=False
+        DateTime(timezone=True),
+        default=datetime.now,
+        onupdate=func.now(),
+        nullable=False,
     )
     meta: Mapped[dict | None] = mapped_column(
         MutableDict.as_mutable(JSONB), nullable=True
@@ -41,7 +47,7 @@ class Transaction(PrimaryUUIDTimestamped):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_expense: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     category: Mapped[str | None] = mapped_column(
         String(50), nullable=True, comment="Category of the transaction"

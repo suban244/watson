@@ -1,19 +1,34 @@
+from contextlib import contextmanager
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from .engine import build_connection_string
 from sqlalchemy.ext.asyncio import AsyncSession
 from collections.abc import AsyncGenerator
+from sqlalchemy.engine import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from collections.abc import Generator
 
-DATABASE_URL = build_connection_string()
+ASYNC_DATABASE_URL = build_connection_string(is_async=True)
+SYNC_DATABASE_URL = build_connection_string()
 
 engine: AsyncEngine = create_async_engine(
-    DATABASE_URL,
+    ASYNC_DATABASE_URL,
     pool_size=20,
     max_overflow=20,
     pool_recycle=3600,
     pool_timeout=60,
 )
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+
+
+sync_engine = create_engine(
+    SYNC_DATABASE_URL,
+    pool_size=20,
+    max_overflow=20,
+    pool_recycle=3600,
+    pool_timeout=60,
+)
+sync_session_maker = sessionmaker(sync_engine)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
@@ -40,3 +55,16 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
             print(f"Unexpected error in session: {e}")
             await session.rollback()
             raise
+
+
+@contextmanager
+def sync_session_manager() -> Generator[Session, None, None]:
+    session = sync_session_maker()
+    try:
+        yield session
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+        raise

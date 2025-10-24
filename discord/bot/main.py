@@ -1,3 +1,4 @@
+import json
 import asyncio
 from redis.asyncio.client import Redis
 import discord
@@ -7,6 +8,7 @@ from core.config import settings
 import logfire
 
 from agent.base_finance_agent import finance_agent, Context
+from agent.financial_tasks import summary_agent
 
 logfire.configure(
     token=settings.LOGFIRE_TOKEN,
@@ -49,6 +51,35 @@ async def start_discord_bot():
         await client.start(settings.DISCORD_TOKEN)
 
 
+async def handle_message(message: str | None):
+    if message is None:
+        return
+    logfire.info(f"Received message from Redis Pub/Sub: {message}")
+
+    try:
+        data = json.loads(message)
+    except json.JSONDecodeError:
+        logfire.error("Received invalid JSON message.")
+        return
+
+    channel = client.get_channel(int(settings.SOURCE_CHANNEL_ID))
+    if not channel:
+        return
+    if isinstance(data, str):
+        await channel.send(data)  # type: ignore
+
+    if isinstance(data, dict):
+        match data.get("type"):
+            case "weekly_expense_summary":
+                summary = data.get("data", {})
+                response = await summary_agent.run(
+                    f"Provide a weekly expense summary based on the following data:\n{summary}"
+                )
+                await channel.send(response.output)  # type: ignore
+
+    return
+
+
 async def check_task_queue():
     async_redis = Redis.from_url(settings.CELERY_BROKER_URL)
     pubsub = async_redis.pubsub()
@@ -61,12 +92,8 @@ async def check_task_queue():
                     ignore_subscribe_messages=True, timeout=1.0
                 )
                 if message:
-                    logfire.info(
-                        f"Received message from Redis Pub/Sub: {message['data']}"
-                    )
-                    channel = client.get_channel(int(settings.SOURCE_CHANNEL_ID))
-                    if channel:
-                        await channel.send(message["data"].decode())  # type: ignore
+                    await handle_message(message=message["data"])
+
             except Exception as e:
                 logfire.error(f"Error processing Redis Pub/Sub message: {e}")
     finally:

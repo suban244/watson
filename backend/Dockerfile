@@ -22,4 +22,7 @@ RUN chmod +x ./start.sh
 COPY celery/worker/start.sh ./start-worker.sh
 RUN chmod +x ./start-worker.sh
 
+COPY celery/beat/start.sh ./start-beat.sh
+RUN chmod +x ./start-beat.sh
+
 ENV PYTHONPATH=/app

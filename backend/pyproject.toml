@@ -11,7 +11,7 @@ dependencies = [
     "alembic>=1.15.1",
     "psycopg[c,pool]>=3.2.5",
     "asyncpg==0.30.0",
-    "logfire[fastapi,sqlalchemy]==3.9.0 ",
+    "logfire[celery,fastapi,sqlalchemy]==3.9.0",
     "celery>=5.5.3",
     "redis>=6.4.0",
     "flower>=2.0.1",

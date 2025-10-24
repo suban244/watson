@@ -536,6 +536,9 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+celery = [
+    { name = "opentelemetry-instrumentation-celery" },
+]
 fastapi = [
     { name = "opentelemetry-instrumentation-fastapi" },
 ]
@@ -695,6 +698,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/bc/db/79bdc2344b38e60fecc7e99159a3f5b4c0e1acec8de305fba0a713cc3692/opentelemetry_instrumentation_asgi-0.52b1.tar.gz", hash = "sha256:a6dbce9cb5b2c2f45ce4817ad21f44c67fd328358ad3ab911eb46f0be67f82ec", size = 24203 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/19/de/39ec078ae94a365d2f434b7e25886c267864aca5695b48fa5b60f80fbfb3/opentelemetry_instrumentation_asgi-0.52b1-py3-none-any.whl", hash = "sha256:f7179f477ed665ba21871972f979f21e8534edb971232e11920c8a22f4759236", size = 16338 },
+]
+
+[[package]]
+name = "opentelemetry-instrumentation-celery"
+version = "0.52b1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-instrumentation" },
+    { name = "opentelemetry-semantic-conventions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2c/63/a7f3ad7dae01160ee8c86ca3e41c9988a3ac36adf218f3b57d9c3061c4a5/opentelemetry_instrumentation_celery-0.52b1.tar.gz", hash = "sha256:b8265de04e5d4009dc124eae00968cbbc31dc211571f5e45ffe54e73c989d319", size = 14779 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f4/02/e487bb1ffa3e2834d47e63ff797576b12404ef8476fc2b09e31bf76e71fc/opentelemetry_instrumentation_celery-0.52b1-py3-none-any.whl", hash = "sha256:7d7405bea4fba7ac861d177553cf8b635140dd72565126beb7c7b336ac5aa900", size = 13809 },
 ]
 
 [[package]]
@@ -1343,7 +1360,7 @@ dependencies = [
     { name = "celery" },
     { name = "fastapi", extra = ["standard"] },
     { name = "flower" },
-    { name = "logfire", extra = ["fastapi", "sqlalchemy"] },
+    { name = "logfire", extra = ["celery", "fastapi", "sqlalchemy"] },
     { name = "psycopg", extra = ["c", "pool"] },
     { name = "pydantic-settings" },
     { name = "redis" },
@@ -1363,7 +1380,7 @@ requires-dist = [
     { name = "celery", specifier = ">=5.5.3" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.112.1" },
     { name = "flower", specifier = ">=2.0.1" },
-    { name = "logfire", extras = ["fastapi", "sqlalchemy"], specifier = "==3.9.0" },
+    { name = "logfire", extras = ["celery", "fastapi", "sqlalchemy"], specifier = "==3.9.0" },
     { name = "psycopg", extras = ["c", "pool"], specifier = ">=3.2.5" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
     { name = "redis", specifier = ">=6.4.0" },

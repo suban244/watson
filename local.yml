@@ -39,6 +39,15 @@ services:
     ports: []
     command: /app/start-worker.sh
 
+  beat:
+    <<: *backend
+    image: beat
+    depends_on:
+      - db
+      - redis
+    ports: []
+    command: /app/start-beat.sh
+
   # flower:
   #   <<: *backend
   #   image: flower

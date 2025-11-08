@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.16.3",
     "discord-py>=2.5.2",
-    "logfire>=3.21.1",
+    "logfire[httpx]>=3.21.1",
     "mistralai>=1.8.2",
     "openai>=1.93.1",
     "psycopg>=3.2.9",

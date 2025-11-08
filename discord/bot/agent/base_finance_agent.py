@@ -3,12 +3,10 @@ from discord.message import Message
 from pydantic import BaseModel
 from zoneinfo import ZoneInfo
 
-# from pydantic_ai.models.mistral import MistralModel
+from pydantic_ai.models.mistral import MistralModel
 from core.schema import ExpenseCategory, Transaction
 
-# from pydantic_ai.providers.mistral import MistralProvider
-from pydantic_ai.models.openai import OpenAIModel
-from pydantic_ai.providers.openrouter import OpenRouterProvider
+from pydantic_ai.providers.mistral import MistralProvider
 from core.config import settings
 from datetime import datetime
 from services.db_proxy import db_proxy
@@ -50,12 +48,8 @@ class Context(BaseModel):
         arbitrary_types_allowed = True
 
 
-# model = MistralModel(
-#     "mistral-medium-2508", provider=MistralProvider(api_key=settings.MISTRAL_API_KEY)
-# )
-model = OpenAIModel(
-    "z-ai/glm-4.5-air:free",
-    provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
+model = MistralModel(
+    "mistral-medium-2508", provider=MistralProvider(api_key=settings.MISTRAL_API_KEY)
 )
 
 finance_agent = Agent(
@@ -69,6 +63,7 @@ finance_agent = Agent(
             takes_ctx=False,
         )
     ],
+    # retries=2
 )
 
 
@@ -107,7 +102,6 @@ async def add_expense(
         category=category,
         is_expense=True,
     )
-    # expense_sheet.append_row(expense)
     await db_proxy.add_transaction(expense)
 
     return f"Expense added: {expense.title} on {expense.date} for {expense.amount} in category {expense.category.value}."
@@ -115,7 +109,7 @@ async def add_expense(
 
 @finance_agent.tool
 async def end_action(
-    ctx: RunContext[Context], success: bool, reason: str | None = None
+    ctx: RunContext[Context], *, success: bool, reason: str | None = None
 ) -> str:
     await ctx.deps.message.add_reaction("✅" if success else "❌")
     ctx.deps.send_final_response = False

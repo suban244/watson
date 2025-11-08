@@ -12,6 +12,7 @@ logfire.configure(
     environment=settings.APP_ENV,
     scrubbing=False,
     service_name="web-server",
+    distributed_tracing=True,
 )
 
 logfire.instrument_fastapi(app, capture_headers=True)

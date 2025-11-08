@@ -11,7 +11,8 @@ class DB_Proxy_Hook:
     @logfire.instrument("add_transaction", record_return=True)
     async def add_transaction(self, transaction_data: Transaction):
         response = await self.client.post(
-            "/transactions/", json=transaction_data.model_dump(mode="json")
+            "/transactions/",
+            json=transaction_data.model_dump(mode="json"),
         )
         return response.json()
 

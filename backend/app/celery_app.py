@@ -26,11 +26,11 @@ celery_app.autodiscover_tasks(["tasks"])
 # tasks included explicitly via Celery(include=["tasks"])
 
 celery_app.conf.beat_schedule = {
-    "add-every-minute": {
-        "task": "tasks.add.add",
-        "schedule": crontab(minute="*/1"),
-        "args": (16, 16),
-    },
+    # "add-every-minute": {
+    #     "task": "tasks.add.add",
+    #     "schedule": crontab(minute="*/1"),
+    #     "args": (16, 16),
+    # },
     "calculate-expenses-of-last-week": {
         "task": "tasks.finances.calculate_expenses_of_last_week",
         "schedule": crontab(hour=8, minute=0, day_of_week="mon"),

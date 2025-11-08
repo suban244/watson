@@ -26,7 +26,7 @@ uv_sync:
 	uv --directory ./backend sync
 
 check:
-	source ./backend/.venv/bin/activate && pre-commit run -a
+	uv run pre-commit run -a
 
 makemigrations:
 	@echo "Generating migrations."

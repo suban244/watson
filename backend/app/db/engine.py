@@ -10,6 +10,7 @@ def build_connection_string(
     host: str = settings.POSTGRES_HOST,
     port: int = settings.POSTGRES_PORT,
     db: str = settings.POSTGRES_DB,
+    *,
     is_async: bool = False,
 ) -> str:
     db_api: str = ASYNC_DB_API if is_async else SYNC_DB_API

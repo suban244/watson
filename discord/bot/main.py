@@ -6,6 +6,7 @@ from discord.utils import setup_logging
 from discord.message import Message
 from core.config import settings
 import logfire
+from pydantic_ai.usage import UsageLimits
 
 from agent.base_finance_agent import finance_agent, Context
 from agent.financial_tasks import summary_agent
@@ -16,6 +17,7 @@ logfire.configure(
     send_to_logfire="if-token-present",
 )
 logfire.instrument_pydantic_ai()
+logfire.instrument_httpx()
 
 
 intents = discord.Intents.default()
@@ -40,7 +42,9 @@ async def on_message(message: Message):
     context = Context(message=message)
 
     await message.add_reaction("👀")
-    response = await finance_agent.run(message.content, deps=context)
+    response = await finance_agent.run(
+        message.content, deps=context, usage_limits=UsageLimits(request_limit=3)
+    )
     if context.send_final_response:
         await message.channel.send(response.output)
 

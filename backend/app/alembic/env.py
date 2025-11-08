@@ -4,6 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from db.models import Base
 from db.engine import build_connection_string
+import os
 
 from alembic import context
 
@@ -16,7 +17,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-DATABASE_URL = build_connection_string(host="localhost", is_async=False)
+host = "db" if os.getenv("IS_DOCKER", default=False) else "localhost"
+DATABASE_URL = build_connection_string(host=host, is_async=False)
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 # config.set_main_option("sqlalchemy.url", "postgresql+psycopg://postgres:postgres@db:5432/postgres")
 # config.set_main_option("sqlalchemy.url", "postgresql://postgres:postgres@db:5432/postgres")

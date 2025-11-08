@@ -9,6 +9,11 @@ services:
       - db-data:/var/lib/postgresql/data
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:6
@@ -26,7 +31,12 @@ services:
           path: ./backend/pyproject.toml
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
     command: /app/start.sh
+    environment:
+      IS_DOCKER: true
     env_file:
       - .env
 
@@ -47,15 +57,6 @@ services:
       - redis
     ports: []
     command: /app/start-beat.sh
-
-  # flower:
-  #   <<: *backend
-  #   image: flower
-  #   ports:
-  #     - "5555:5555"
-  #   env_file:
-  #     - .env
-  #   command: /start-flower
 
   discord: &discord
     build:

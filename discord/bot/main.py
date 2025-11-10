@@ -15,6 +15,9 @@ logfire.configure(
     token=settings.LOGFIRE_TOKEN,
     service_name="discord-bot",
     send_to_logfire="if-token-present",
+    environment=settings.APP_ENV,
+    scrubbing=False,
+    distributed_tracing=True,
 )
 logfire.instrument_pydantic_ai()
 logfire.instrument_httpx()

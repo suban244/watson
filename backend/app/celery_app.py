@@ -8,13 +8,27 @@ import logfire
 
 @worker_init.connect()
 def init_worker(*args, **kwargs):
-    logfire.configure(service_name="worker")
+    logfire.configure(
+        service_name="worker",
+        token=settings.LOGFIRE_TOKEN,
+        send_to_logfire="if-token-present",
+        environment=settings.APP_ENV,
+        scrubbing=False,
+        distributed_tracing=True,
+    )
     logfire.instrument_celery()
 
 
 @beat_init.connect()
 def init_beat(*args, **kwargs):
-    logfire.configure(service_name="beat")
+    logfire.configure(
+        service_name="beat",
+        token=settings.LOGFIRE_TOKEN,
+        send_to_logfire="if-token-present",
+        environment=settings.APP_ENV,
+        scrubbing=False,
+        distributed_tracing=True,
+    )
     logfire.instrument_celery()
 
 

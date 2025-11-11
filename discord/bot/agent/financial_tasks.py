@@ -1,8 +1,5 @@
 from pydantic_ai import Agent
 
-# from pydantic_ai.models.mistral import MistralModel
-
-# from pydantic_ai.providers.mistral import MistralProvider
 from pydantic_ai.models.mistral import MistralModel
 from pydantic_ai.providers.mistral import MistralProvider
 from core.config import settings

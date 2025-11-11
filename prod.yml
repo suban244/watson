@@ -1,27 +1,118 @@
 name: watson-bot
 
-services:
-  db:
-    image: postgres:16
-    ports:
-      - "5432:5432"
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    env_file:
-      - .env
-  discord: &discord
-    build:
-      context: ./discord
-      dockerfile: Dockerfile
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./discord
-          target: /app
-        - action: rebuild
-          path: ./discord/pyproject.toml
-    env_file:
-      - ./discord/.env
+networks:
+  back: {}
 
 volumes:
   db-data:
+  redis-data:
+
+services:
+  db:
+    image: postgres:16.4
+    env_file: [.env]
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks: [back]
+
+  redis:
+    image: redis:7.2
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks: [back]
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: /app/start.sh
+    environment:
+      IS_DOCKER: "true"
+    env_file: [.env]
+    healthcheck:
+      # ensure wget or curl exists in the image; curl is more common
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    networks: [back]
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: /app/start-worker.sh
+    env_file: [.env]
+    # Optional: basic liveness check (adjust queue/app names)
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.celery_app inspect ping -d celery@$$HOSTNAME | grep -q 'pong'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks: [back]
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: /app/start-beat.sh
+    env_file: [.env]
+    # Optional: check that the beat process is running
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'celery(.*)beat' >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks: [back]
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.10.1
+    restart: unless-stopped
+    networks: [back]
+    # volumes:
+    #   - ./cloudflared/config.yml:/etc/cloudflared/config.yml:ro
+    # Token-based tunnel; config.yml defines ingress rules.
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN}
+    env_file: [.env]
+
+  discord:
+    build:
+      context: ./discord
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    env_file: [.env]
+    restart: unless-stopped
+    networks: [back]

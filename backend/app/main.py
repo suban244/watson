@@ -23,6 +23,11 @@ def read_root():
     return {"Hello": "Welcome To Watson"}
 
 
+@app.get("/health/")
+def health():
+    return {"status": "ok"}
+
+
 @app.get("/tasks/")
 def task():
     add.delay(4, 6)  # type: ignore

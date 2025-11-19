@@ -9,7 +9,7 @@ ENV UV_LINK_MODE=copy
 COPY pyproject.toml uv.lock /app/
 
 RUN \
-    apk add --no-cache postgresql-libs && \
+    apk add --no-cache postgresql-libs curl && \
     apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev && \
     uv sync --frozen --no-dev && \
     apk --purge del .build-deps

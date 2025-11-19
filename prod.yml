@@ -40,6 +40,8 @@ services:
       dockerfile: Dockerfile
     expose:
       - "8000"
+    # ports:
+    #   - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -52,9 +54,9 @@ services:
     healthcheck:
       # ensure wget or curl exists in the image; curl is more common
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/health/ || exit 1"]
-      interval: 10s
+      interval: 2m
       timeout: 3s
-      retries: 10
+      retries: 1
     restart: unless-stopped
     networks: [back]
 

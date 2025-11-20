@@ -12,6 +12,7 @@ dependencies = [
     "openai>=1.93.1",
     "psycopg>=3.2.9",
     "pydantic-ai>=0.4.5",
+    "pydantic-graph>=0.4.5",
     "pydantic-settings>=2.9.1",
     "python-dotenv>=1.1.0",
     "redis>=6.4.0",

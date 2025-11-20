@@ -1,3 +1,9 @@
+from services.attachment_processor import (
+    attachment_processor,
+    Classifier,
+    State,
+    Expenses,
+)
 import json
 import asyncio
 from redis.asyncio.client import Redis
@@ -41,10 +47,26 @@ async def on_message(message: Message):
     if message.author == client.user:
         return
 
+    await message.add_reaction("👀")
     context = Context(message=message)
 
-    await message.add_reaction("👀")
-    response = await finance_agent.run(message.content, deps=context)
+    attachment_results = await asyncio.gather(
+        *[
+            attachment_processor.run(
+                start_node=Classifier(image_url=attachment.url), state=State()
+            )
+            for attachment in message.attachments
+        ]
+    )
+    message_content = message.content
+    for result in attachment_results:
+        if isinstance(result.output, Expenses):
+            logfire.info(
+                f"Parsed expenses: {result.output}", expense_items=result.output
+            )
+            message_content += f"\nParsed Expenses from attachment :\n{result.output}"
+
+    response = await finance_agent.run(message_content, deps=context)
     if context.send_final_response:
         await message.channel.send(response.output)
 

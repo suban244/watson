@@ -9,10 +9,10 @@ volumes:
 
 services:
   db:
-    image: postgres:16.4
+    image: postgres:18.1
     env_file: [.env]
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
       interval: 10s
@@ -22,7 +22,7 @@ services:
     networks: [back]
 
   redis:
-    image: redis:7.2
+    image: redis:8.4
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis-data:/data

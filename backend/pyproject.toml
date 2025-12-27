@@ -9,12 +9,12 @@ dependencies = [
     "pydantic-settings>=2.8.1",
     "SQLAlchemy>=2.0.38",
     "alembic>=1.15.1",
-    "psycopg[c,pool]>=3.2.5",
     "asyncpg==0.30.0",
     "logfire[celery,fastapi,sqlalchemy]==3.9.0",
     "celery>=5.5.3",
     "redis>=6.4.0",
     "flower>=2.0.1",
+    "psycopg[binary,pool]>=3.3.2",
 ]
 
 [dependency-groups]

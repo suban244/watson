@@ -16,6 +16,9 @@ prod:
 	@echo "Running in local mode with docker."
 	docker compose -f prod.yml up --build
 
+stop_prod:
+	@echo "Stopping in local mode with docker."
+	docker compose -f prod.yml down
 
 uv_lock:
 	@echo "Locking dependencies."

@@ -16,11 +16,20 @@ class IncomeCategory(StrEnum):
 
 
 class ExpenseCategory(StrEnum):
-    HOME_EXPENSES = "home_expenses"
-    OFFICE_COMMUTE = "office_commute"
     PERSONAL_TRAVEL = "personal_travel"
-    OFFICE_DAY_SNACKS = "office_day_snacks"
-    EATING_OUT_WITH_FRIENDS = "eating_out_with_friends"
+    PERSONAL_ITEMS = "personal_items"
+    SNACKS = "snacks"
+    HEALTH = "health"
+
+    OFFICE_COMMUTE = "office_commute"
+    OFFICE_DAY_FOOD = "office_day_food"
+
+    PHONE_BILL = "phone_bill"
+    HOME_EXPENSES = "home_expenses"
+    GOING_OUT_WITH_FRIENDS = "going_out_with_friends"
+
+    UTILITIES = "utilities"
+    GIFTS = "gifts"
     MISC = "misc"
 
     @classmethod

@@ -47,6 +47,10 @@ async def on_message(message: Message):
     if message.author == client.user:
         return
 
+    logfire.info(
+        "Received message", message=message, reference=message.reference, id=message.id
+    )
+
     await message.add_reaction("👀")
     context = Context(message=message)
 

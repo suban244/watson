@@ -24,6 +24,7 @@ async def create_transaction(
 
     session.add(new_transaction)
     await session.commit()
+    await session.refresh(new_transaction)
     return new_transaction
 
 

@@ -88,6 +88,16 @@ async def add_expense(
     category: ExpenseCategory | None = None,
     date: str | None = None,
 ) -> str:
+    """
+    Add a new expense.
+
+    Args:
+        title (str): The title or description of the expense.
+        amount (float): The amount of the expense in NPR.
+        category (ExpenseCategory | None): The category of the expense.
+        date (str | None): The date of the expense in YYYY-MM-DD format. If not provided, defaults to today. \
+        Set to None if not provided.
+    """
     if not category:
         return "Invalid category provided."
 

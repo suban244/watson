@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+import uuid
 from datetime import datetime
 
 
@@ -19,4 +20,4 @@ class TransactionCreate(Transaction):
 
 
 class TransactionRead(Transaction):
-    pass
+    id: uuid.UUID

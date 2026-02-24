@@ -1,19 +1,18 @@
-from pydantic_ai import Agent, RunContext, Tool
-from discord.message import Message
-from pydantic import BaseModel
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from pydantic_ai.models.mistral import MistralModel
-from core.schema import ExpenseCategory, Transaction
-
-from pydantic_ai.providers.mistral import MistralProvider
-from core.config import settings
-from datetime import datetime
-from services.db_proxy import db_proxy
 from agent.tools.query_database import (
     query_database_function,
     query_function_description,
 )
+from core.config import settings
+from core.schema import ExpenseCategory, Transaction
+from discord.message import Message
+from pydantic import BaseModel
+from pydantic_ai import Agent, RunContext, Tool
+from pydantic_ai.models.mistral import MistralModel
+from pydantic_ai.providers.mistral import MistralProvider
+from services.db_proxy import db_proxy
 
 
 def instructions() -> str:
@@ -88,15 +87,12 @@ async def add_expense(
     category: ExpenseCategory | None = None,
     date: str | None = None,
 ) -> str:
-    """
-    Add a new expense.
-
+    """Add an expense to the database.
     Args:
-        title (str): The title or description of the expense.
-        amount (float): The amount of the expense in NPR.
-        category (ExpenseCategory | None): The category of the expense.
-        date (str | None): The date of the expense in YYYY-MM-DD format. If not provided, defaults to today. \
-        Set to None if not provided.
+        title: A brief description of the expense (e.g., "Lunch at cafe").
+        amount: The cost of the expense in NPR (e.g., 500.0).
+        category: The category of the expense
+        date: The date of the expense in YYYY-MM-DD format. Do not include the date if the expense is for today.
     """
     if not category:
         return "Invalid category provided."

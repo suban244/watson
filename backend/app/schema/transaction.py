@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict
-import uuid
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
 
 
 class Transaction(BaseModel):
@@ -20,4 +21,21 @@ class TransactionCreate(Transaction):
 
 
 class TransactionRead(Transaction):
-    id: uuid.UUID
+    id: UUID
+    pass
+
+
+class TransactionUpdate(BaseModel):
+    amount: float | None = None
+    title: str | None = None
+    description: str | None = None
+    is_expense: bool | None = None
+    date: datetime | None = None
+
+    category: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransactionSearch(BaseModel):
+    search_query: str

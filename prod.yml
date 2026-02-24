@@ -9,12 +9,19 @@ volumes:
 
 services:
   db:
-    image: postgres:18.1
-    env_file: [.env]
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
     volumes:
       - db-data:/var/lib/postgresql
+    env_file:
+      - .env
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -73,7 +80,11 @@ services:
     env_file: [.env]
     # Optional: basic liveness check (adjust queue/app names)
     healthcheck:
-      test: ["CMD-SHELL", "celery -A app.celery_app inspect ping -d celery@$$HOSTNAME | grep -q 'pong'"]
+      test:
+        [
+          "CMD-SHELL",
+          "celery -A app.celery_app inspect ping -d celery@$$HOSTNAME | grep -q 'pong'",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -2637,6 +2637,7 @@ name = "watson"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "ipykernel" },
     { name = "marimo" },
     { name = "mistralai" },
@@ -2648,6 +2649,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "ipykernel", specifier = ">=7.1.0" },
     { name = "marimo", specifier = ">=0.17.8" },
     { name = "mistralai", specifier = ">=1.9.11" },

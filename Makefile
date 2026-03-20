@@ -1,4 +1,25 @@
 
+dev:
+	@echo "Launching dev environment..."
+	@code $(PWD)/workspace.code-workspace
+	@SESSION="watson"; \
+	if tmux has-session -t $$SESSION 2>/dev/null; then \
+		echo "Session '$$SESSION' already exists, attaching..."; \
+		tmux attach-session -t $$SESSION; \
+	else \
+		tmux new-session -d -s $$SESSION -x 220 -y 50; \
+		tmux rename-window -t $$SESSION:1 "lazygit"; \
+		tmux send-keys -t $$SESSION:1 "cd $(PWD) && lazygit" Enter; \
+		tmux new-window -t $$SESSION -n "discord"; \
+		tmux send-keys -t $$SESSION:2 "cd $(PWD)/discord" Enter; \
+		tmux new-window -t $$SESSION -n "backend"; \
+		tmux send-keys -t $$SESSION:3 "cd $(PWD)/backend" Enter; \
+		tmux new-window -t $$SESSION; \
+		tmux new-window -t $$SESSION; \
+		tmux select-window -t $$SESSION:1; \
+		tmux attach-session -t $$SESSION; \
+	fi
+
 run_local:
 	@echo "Running in local mode with docker."
 	docker compose -f local.yml up --build --watch

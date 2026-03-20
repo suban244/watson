@@ -1,20 +1,22 @@
-from services.attachment_processor import (
-    attachment_processor,
-    Classifier,
-    State,
-    Expenses,
-)
-import json
 import asyncio
-from redis.asyncio.client import Redis
-import discord
-from discord.utils import setup_logging
-from discord.message import Message
-from core.config import settings
-import logfire
+import json
 
-from agent.base_finance_agent import finance_agent, Context
+import logfire
+from agent.base_finance_agent import Context, finance_agent
 from agent.financial_tasks import summary_agent
+from core.config import settings
+from pydantic_ai.messages import ModelMessage
+from redis.asyncio.client import Redis
+from services.attachment_processor import (
+    Classifier,
+    Expenses,
+    State,
+    attachment_processor,
+)
+
+import discord
+from discord.message import Message
+from discord.utils import setup_logging
 
 logfire.configure(
     token=settings.LOGFIRE_TOKEN,
@@ -32,6 +34,8 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 client = discord.Client(intents=intents)
+
+message_history: list[ModelMessage] = []
 
 
 @client.event
@@ -70,7 +74,17 @@ async def on_message(message: Message):
             )
             message_content += f"\nParsed Expenses from attachment :\n{result.output}"
 
-    response = await finance_agent.run(message_content, deps=context)
+    response = await finance_agent.run(
+        message_content, deps=context, message_history=message_history
+    )
+    logfire.debug(
+        "Agent response",
+        response=response.output,
+        all_messages=response.all_messages(),
+        new_messages=response.new_messages(),
+        new_messages_json=response.new_messages_json(),
+    )
+    message_history.extend(response.new_messages())
     if context.send_final_response:
         await message.channel.send(response.output)
 
@@ -106,6 +120,10 @@ async def handle_message(message: str | None):
                     f"Provide a weekly expense summary based on the following data:\n{summary}"
                 )
                 await channel.send(response.output)  # type: ignore
+            case _:
+                logfire.warning(f"Unknown Redis message type: {data.get('type')!r}, full message: {data!r}")
+    else:
+        logfire.warning(f"Unknown Redis message format: {type(data)}, value: {data!r}")
 
     return
 
@@ -121,8 +139,11 @@ async def check_task_queue():
                 message = await pubsub.get_message(
                     ignore_subscribe_messages=True, timeout=1.0
                 )
-                if message:
-                    await handle_message(message=message["data"])
+                if message and "data" in message:
+                    data = message["data"]
+                    if isinstance(data, bytes):
+                        data = data.decode("utf-8")
+                    await handle_message(message=data)
 
             except Exception as e:
                 logfire.error(f"Error processing Redis Pub/Sub message: {e}")

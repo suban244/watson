@@ -67,4 +67,3 @@ def sync_session_manager() -> Generator[Session, None, None]:
         raise
     finally:
         session.close()
-        raise

@@ -48,10 +48,12 @@ async def search_transactions(
 ):
     search_transactions_query = (
         select(Transaction)
-        .order_by(text(
-            "3 * (title <@> to_bm25query(:query, 'ix_transaction_title_bm25'))"
-            " + COALESCE(description <@> to_bm25query(:query, 'ix_transaction_description_bm25'), 0)"
-        ))
+        .order_by(
+            text(
+                "3 * (title <@> to_bm25query(:query, 'ix_transaction_title_bm25'))"
+                " + COALESCE(description <@> to_bm25query(:query, 'ix_transaction_description_bm25'), 0)"
+            )
+        )
         .limit(10)
         .params(query=search.search_query)
     )
@@ -82,7 +84,7 @@ async def update_transaction(
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    for key, value in transaction_update.model_dump().items():
+    for key, value in transaction_update.model_dump(exclude_none=True).items():
         setattr(transaction, key, value)
 
     await session.commit()

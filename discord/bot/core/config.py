@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     LOGFIRE_TOKEN: str
 
     BACKEND_SERVICE_API_URL: str
+    INTERNAL_API_TOKEN: str
 
     class Config:
         env_file_encoding = "utf-8"

@@ -10,7 +10,8 @@ dependencies = [
     "marimo>=0.17.8",
     "mistralai>=1.9.11",
     "pre-commit>=4.3.0",
-    "pydantic-ai>=1.12.0",
+    "pydantic-ai==1.70",
+    "pydantic-ai-slim[mistral,openrouter]>=1.65.0",
     "python-dotenv>=1.2.1",
     "ruff>=0.14.4",
 ]

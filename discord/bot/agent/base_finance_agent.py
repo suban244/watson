@@ -7,12 +7,14 @@ from agent.tools.query_database import (
 )
 from core.config import settings
 from core.schema import ExpenseCategory, Transaction
-from discord.message import Message
+from openai import OpenAI, base_url
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext, Tool
-from pydantic_ai.models.mistral import MistralModel
-from pydantic_ai.providers.mistral import MistralProvider
+from pydantic_ai.models.openrouter import OpenRouterModel
+from pydantic_ai.providers.openrouter import OpenRouterProvider
 from services.db_proxy import db_proxy
+
+from discord.message import Message
 
 
 def instructions() -> str:
@@ -31,8 +33,17 @@ Here is your workflow for basic actions
     - Steps:
         1. Parse the user's request to extract the amount, title, category(optional) and date (optional).
             - No need to ask for the date if not provided
+            - If no category is clear from context, omit it (it will default to misc)
         2. Call the `add_expense` tool with the extracted information.
         3. Call the `return_action` tool with success set to true and no reason.
+
+2. Search / Query Expenses:
+    - Trigger: User asks to find, look up, or list expenses matching a description.
+    - User: "Find my food expenses", "What did I spend on transport last week?"
+    - Steps:
+        1. Use `search_expenses` for keyword-based lookups (title/description matching).
+        2. Use `query_database` for date-filtered or aggregate queries (totals, counts, date ranges).
+        3. Call the `return_action` tool with success set to true.
 
 Date Today: {date_today}
 """
@@ -47,8 +58,9 @@ class Context(BaseModel):
         arbitrary_types_allowed = True
 
 
-model = MistralModel(
-    "mistral-medium-2508", provider=MistralProvider(api_key=settings.MISTRAL_API_KEY)
+model = OpenRouterModel(
+    model_name="openai/gpt-oss-120b",
+    provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
 )
 
 finance_agent = Agent(
@@ -62,7 +74,6 @@ finance_agent = Agent(
             takes_ctx=False,
         )
     ],
-    # retries=2
 )
 
 
@@ -95,7 +106,7 @@ async def add_expense(
         date: The date of the expense in YYYY-MM-DD format. Do not include the date if the expense is for today.
     """
     if not category:
-        return "Invalid category provided."
+        category = ExpenseCategory.MISC
 
     date_obj = date_from_string(date)
     if not date_obj:
@@ -111,6 +122,22 @@ async def add_expense(
     await db_proxy.add_transaction(expense)
 
     return f"Expense added: {expense.title} on {expense.date} for {expense.amount} in category {expense.category.value}."
+
+
+@finance_agent.tool
+async def search_expenses(ctx: RunContext[Context], search_query: str) -> str:
+    """Search for expenses in the database based on a query string.
+    Args:
+        search_query: A string to search for in the title or description of expenses (e.g., "food", "transport").
+    """
+    results = await db_proxy.search_transactions(search_query)
+    if not results:
+        return "No expenses found matching your query."
+
+    response = "Search results:\n"
+    for expense in results:
+        response += f"- {expense['title']} on {expense['date'][:10]} for {expense['amount']} in category {expense.get('category', 'N/A')}\n"
+    return response
 
 
 @finance_agent.tool

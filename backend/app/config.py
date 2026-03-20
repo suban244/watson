@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str
 
     LOGFIRE_TOKEN: str | None = None
+    INTERNAL_API_TOKEN: str
 
 
 settings = Settings()  # type: ignore

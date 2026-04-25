@@ -10,12 +10,11 @@ dependencies = [
     "SQLAlchemy>=2.0.38",
     "alembic>=1.15.1",
     "asyncpg==0.30.0",
-    "logfire[celery,fastapi,sqlalchemy]==3.9.0",
-    "celery>=5.5.3",
+    "logfire[fastapi,sqlalchemy]==3.9.0",
+    "taskiq>=0.12.2",
+    "taskiq-redis>=1.2.2",
     "redis>=6.4.0",
-    "flower>=2.0.1",
     "psycopg[binary,pool]>=3.3.2",
-    "gevent>=25.9.1",
 ]
 
 [dependency-groups]

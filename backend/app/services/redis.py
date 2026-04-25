@@ -5,7 +5,7 @@ from config import settings
 
 class RedisService:
     def __init__(self):
-        self.client = redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
+        self.client = redis.StrictRedis.from_url(settings.REDIS_URL)
 
 
 redis_service = RedisService()

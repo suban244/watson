@@ -6,4 +6,4 @@ set -o nounset
 
 export PYTHONPATH=/app/app
 cd /app/app
-exec /app/.venv/bin/celery -A celery_app.celery_app worker -l INFO -P gevent -c 50
+exec /app/.venv/bin/taskiq worker taskiq_app:broker tasks

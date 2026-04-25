@@ -1,10 +1,12 @@
 #!/bin/sh
-set -e
+
 set -o errexit
 set -o pipefail
 set -o nounset
 
-echo "Starting Celery Beat..."
 export PYTHONPATH=/app/app
 cd /app/app
-exec /app/.venv/bin/celery -A celery_app.celery_app beat -l INFO
+
+/app/.venv/bin/python seed_schedules.py
+
+exec /app/.venv/bin/taskiq scheduler scheduler:scheduler

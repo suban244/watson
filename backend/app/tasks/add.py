@@ -1,6 +1,8 @@
-from celery_app import celery_app
+from taskiq_app import broker
+import logfire
 
 
-@celery_app.task
+@broker.task
+@logfire.instrument
 def add(x: int, y: int):
     return x + y

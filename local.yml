@@ -11,6 +11,7 @@ services:
       - db-data:/var/lib/postgresql
     env_file:
       - .env
+    command: postgres -c shared_preload_libraries=pg_textsearch
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s

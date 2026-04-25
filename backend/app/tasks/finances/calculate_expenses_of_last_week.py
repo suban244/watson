@@ -1,13 +1,13 @@
 from db.models import Transaction
 from db.session import sync_session_manager
 from datetime import datetime, timedelta
-from celery_app import celery_app
+from taskiq_app import broker
 from sqlalchemy import select, func, desc
 from services.messaging import messaging_service
 from zoneinfo import ZoneInfo
 
 
-@celery_app.task
+@broker.task
 def calculate_expenses_of_last_week():
     nepal_tz = ZoneInfo("Asia/Kathmandu")
     current_date = datetime.now(nepal_tz)

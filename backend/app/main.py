@@ -29,8 +29,8 @@ def health():
 
 
 @app.get("/tasks/")
-def task():
-    add.delay(4, 6)  # type: ignore
+async def task():
+    await add.kiq(4, 6)
     messaging_service.send_message("New task added: add(4, 6)", channel="default")
     return {"status": "Task added"}
 

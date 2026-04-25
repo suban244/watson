@@ -16,4 +16,3 @@ Ensure that the summary is clear and easy to understand.
 """
 
 summary_agent = Agent(model=model, instructions=SUMMARY_GENERATE_INSTRUCTIONS)
-

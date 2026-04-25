@@ -7,7 +7,6 @@ from agent.tools.query_database import (
 )
 from core.config import settings
 from core.schema import ExpenseCategory, Transaction
-from openai import OpenAI, base_url
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext, Tool
 from pydantic_ai.models.openrouter import OpenRouterModel

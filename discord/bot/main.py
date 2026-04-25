@@ -121,7 +121,9 @@ async def handle_message(message: str | None):
                 )
                 await channel.send(response.output)  # type: ignore
             case _:
-                logfire.warning(f"Unknown Redis message type: {data.get('type')!r}, full message: {data!r}")
+                logfire.warning(
+                    f"Unknown Redis message type: {data.get('type')!r}, full message: {data!r}"
+                )
     else:
         logfire.warning(f"Unknown Redis message format: {type(data)}, value: {data!r}")
 
@@ -129,7 +131,7 @@ async def handle_message(message: str | None):
 
 
 async def check_task_queue():
-    async_redis = Redis.from_url(settings.CELERY_BROKER_URL)
+    async_redis = Redis.from_url(settings.REDIS_URL)
     pubsub = async_redis.pubsub()
     await pubsub.subscribe("default")
 

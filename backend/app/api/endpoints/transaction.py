@@ -9,6 +9,8 @@ from schema.transaction import (
     TransactionSearch,
     TransactionUpdate,
 )
+from api.helpers.pagination import Pagination, PaginationPageSize
+from api.helpers.filtering import TransactionFilter
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,8 +35,16 @@ async def create_transaction(
 @router.get("/list/", response_model=list[TransactionRead])
 async def get_transaction_list(
     session: AsyncSession = Depends(get_session),
+    pagination: PaginationPageSize = Depends(Pagination().page_size),
+    filters: TransactionFilter = Depends(TransactionFilter.get_filterset),
 ):
-    get_all_transactions_query = select(Transaction)
+    get_all_transactions_query = (
+        select(Transaction)
+        .where(*filters.get_conditions())
+        .order_by(Transaction.created_at.desc())
+        .offset((pagination.page - 1) * pagination.size)
+        .limit(pagination.size)
+    )
     result = await session.execute(get_all_transactions_query)
     db_transactions = result.scalars().all()
 
@@ -45,9 +55,11 @@ async def get_transaction_list(
 async def search_transactions(
     search: TransactionSearch,
     session: AsyncSession = Depends(get_session),
+    filters: TransactionFilter = Depends(TransactionFilter.get_filterset),
 ):
     search_transactions_query = (
         select(Transaction)
+        .where(*filters.get_conditions())
         .order_by(
             text(
                 "3 * (title <@> to_bm25query(:query, 'ix_transaction_title_bm25'))"

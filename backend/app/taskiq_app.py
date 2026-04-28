@@ -1,5 +1,5 @@
 from taskiq import TaskiqEvents, TaskiqState
-from taskiq_redis import  RedisAsyncResultBackend, RedisStreamBroker
+from taskiq_redis import RedisAsyncResultBackend, RedisStreamBroker
 from config import settings
 import logfire
 

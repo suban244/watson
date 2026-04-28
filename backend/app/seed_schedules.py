@@ -1,7 +1,9 @@
 import asyncio
 from taskiq import ScheduledTask
 from scheduler import source
-from tasks.finances.calculate_expenses_of_last_week import calculate_expenses_of_last_week
+from tasks.finances.calculate_expenses_of_last_week import (
+    calculate_expenses_of_last_week,
+)
 
 
 async def main() -> None:

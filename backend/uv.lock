@@ -6,6 +6,10 @@ resolution-markers = [
     "python_full_version < '3.13'",
 ]
 
+[options]
+exclude-newer = "2026-04-29T04:09:01.253947Z"
+exclude-newer-span = "P2W"
+
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
@@ -1423,6 +1427,18 @@ wheels = [
 ]
 
 [[package]]
+name = "sqlalchemy-paradedb"
+version = "0.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e3/3c/805de11f9054ba0673415fb16ca8709523d5fa13b807050c38486c25397f/sqlalchemy_paradedb-0.6.0.tar.gz", hash = "sha256:ccc65f0f54fd4ce5a697d8ebbfd5ab85d3bc4f628355d34a8c435d18c7f6ea66", size = 61257, upload-time = "2026-04-21T20:29:20.787Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4c/a4/60429126b45f7ea111a5a918fa812140bfe24ee30c28623c20fe97eda3d4/sqlalchemy_paradedb-0.6.0-py3-none-any.whl", hash = "sha256:def1eb198d3bfa4084bb4c30c11ab01317222eb3a765fc401a629cf3542fe95b", size = 28647, upload-time = "2026-04-21T20:29:19.754Z" },
+]
+
+[[package]]
 name = "starlette"
 version = "0.46.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1622,6 +1638,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "redis" },
     { name = "sqlalchemy" },
+    { name = "sqlalchemy-paradedb" },
     { name = "taskiq" },
     { name = "taskiq-redis" },
 ]
@@ -1642,6 +1659,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.8.1" },
     { name = "redis", specifier = ">=6.4.0" },
     { name = "sqlalchemy", specifier = ">=2.0.38" },
+    { name = "sqlalchemy-paradedb", specifier = ">=0.6.0" },
     { name = "taskiq", specifier = ">=0.12.2" },
     { name = "taskiq-redis", specifier = ">=1.2.2" },
 ]

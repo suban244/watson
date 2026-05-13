@@ -24,3 +24,6 @@ dev = [
     "ruff>=0.12.3",
     "ty>=0.0.1a14",
 ]
+
+[tool.uv]
+exclude-newer = "2 weeks"

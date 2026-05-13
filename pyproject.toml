@@ -14,7 +14,11 @@ dependencies = [
     "pydantic-ai-slim[mistral,openrouter]>=1.65.0",
     "python-dotenv>=1.2.1",
     "ruff>=0.14.4",
+    "sqlalchemy-paradedb==0.6.0",
 ]
 
 [tool.ruff.lint]
 extend-select = ["FBT"]
+
+[tool.uv]
+exclude-newer = "2 weeks"

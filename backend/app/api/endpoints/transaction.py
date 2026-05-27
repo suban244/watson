@@ -11,7 +11,8 @@ from schema.transaction import (
 )
 from api.helpers.pagination import Pagination, PaginationPageSize
 from api.helpers.filtering import TransactionFilter
-from sqlalchemy import select, text
+from sqlalchemy import select
+from paradedb.sqlalchemy import search, pdb, select_with
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
@@ -53,27 +54,45 @@ async def get_transaction_list(
 
 @router.post("/search/", response_model=list[TransactionRead])
 async def search_transactions(
-    search: TransactionSearch,
+    transaction_search: TransactionSearch,
     session: AsyncSession = Depends(get_session),
     filters: TransactionFilter = Depends(TransactionFilter.get_filterset),
 ):
     search_transactions_query = (
         select(Transaction)
-        .where(*filters.get_conditions())
-        .order_by(
-            text(
-                "3 * (title <@> to_bm25query(:query, 'ix_transaction_title_bm25'))"
-                " + COALESCE(description <@> to_bm25query(:query, 'ix_transaction_description_bm25'), 0)"
-            )
+        # use table column (ColumnElement) instead of InstrumentedAttribute to satisfy typing
+        .where(
+            search.match_any(
+                Transaction.__table__.c.title, *transaction_search.search_query.split()
+            ),
+            *filters.get_conditions(),
+        ).order_by(
+            # pdb.score(Transaction.id)
         )
+        # .order_by(
+        #     text(
+        #         "3 * (title <@> to_bm25query(:query, 'ix_transaction_title_bm25'))"
+        #         " + COALESCE(description <@> to_bm25query(:query, 'ix_transaction_description_bm25'), 0)"
+        #     )
+        # )
         .limit(10)
-        .params(query=search.search_query)
+        # .params(query=transaction_search.search_query)
     )
 
     result = await session.execute(search_transactions_query)
     db_transactions = result.scalars().all()
 
     return db_transactions
+
+
+@router.get("/categories/", response_model=list[str])
+async def get_categories(session: AsyncSession = Depends(get_session)):
+    categories_query = (
+        select(Transaction.category).distinct().where(Transaction.category.isnot(None))
+    )
+    result = await session.execute(categories_query)
+    categories = [row[0] for row in result.fetchall()]
+    return categories
 
 
 @router.get("/{transaction_id}/", response_model=TransactionRead)

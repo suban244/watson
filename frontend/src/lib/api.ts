@@ -40,8 +40,11 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 	return res.json() as Promise<T>;
 }
 
-export const listTransactions = (): Promise<Transaction[]> =>
-	request('GET', '/transactions/list/');
+export const listTransactions = (page = 1, size = 100): Promise<Transaction[]> =>
+	request('GET', `/transactions/list/?page=${page}&size=${size}`);
+
+export const getCategories = (): Promise<string[]> =>
+	request('GET', '/transactions/categories/');
 
 export const searchTransactions = (query: string): Promise<Transaction[]> =>
 	request('POST', '/transactions/search/', { search_query: query });
@@ -57,3 +60,8 @@ export const updateTransaction = (id: string, data: TransactionUpdate): Promise<
 
 export const deleteTransaction = (id: string): Promise<null> =>
 	request('DELETE', `/transactions/${id}/`);
+
+export interface TransactionGroup {
+	label: string;
+	transactions: Transaction[];
+}

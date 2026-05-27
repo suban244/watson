@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Index, String, Text
+from sqlalchemy import Boolean, DateTime, Float, Index, String, Text, column
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import func
+from paradedb.sqlalchemy import indexing
 
 
 class Base(DeclarativeBase):
@@ -57,16 +58,12 @@ class Transaction(PrimaryUUIDTimestamped):
         Index("ix_transactions_is_expense", "is_expense"),
         Index("ix_transactions_category", "category"),
         Index(
-            "ix_transaction_title_bm25",
-            "title",
+            "ix_transactions_bm25",
+            indexing.BM25Field(column("id")),
+            indexing.BM25Field(column("title")),
+            indexing.BM25Field(column("description")),
             postgresql_using="bm25",
-            postgresql_with={"text_config": "english"},
-        ),
-        Index(
-            "ix_transaction_description_bm25",
-            "description",
-            postgresql_using="bm25",
-            postgresql_with={"text_config": "english"},
+            postgresql_with={"key_field": "id"},
         ),
     )
 

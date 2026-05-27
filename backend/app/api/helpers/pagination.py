@@ -13,7 +13,7 @@ class PaginationPageSize(BaseModel):
 
 
 class Pagination:
-    def __init__(self, maximum_limit: int = 100):
+    def __init__(self, maximum_limit: int = 500):
         self.maximum_limit = maximum_limit
 
     async def skip_limit(

@@ -117,6 +117,7 @@ services:
     # volumes:
     #   - ./cloudflared/config.yml:/etc/cloudflared/config.yml:ro
     # Token-based tunnel; config.yml defines ingress rules.
+    # Route traffic to frontend (Nginx), not backend directly.
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN} --protocol http2
     env_file: [.env]
 

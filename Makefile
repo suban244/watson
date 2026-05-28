@@ -10,11 +10,13 @@ dev:
 		tmux new-session -d -s $$SESSION -x 220 -y 50; \
 		tmux rename-window -t $$SESSION:1 "lazygit"; \
 		tmux send-keys -t $$SESSION:1 "cd $(PWD) && lazygit" Enter; \
-		tmux new-window -t $$SESSION -n "discord"; \
-		tmux send-keys -t $$SESSION:2 "cd $(PWD)/discord" Enter; \
+		tmux new-window -t $$SESSION; \
 		tmux new-window -t $$SESSION -n "backend"; \
 		tmux send-keys -t $$SESSION:3 "cd $(PWD)/backend" Enter; \
-		tmux new-window -t $$SESSION; \
+		tmux new-window -t $$SESSION -n "discord"; \
+		tmux send-keys -t $$SESSION:4 "cd $(PWD)/discord" Enter; \
+		tmux new-window -t $$SESSION -n "frontend"; \
+		tmux send-keys -t $$SESSION:5 "cd $(PWD)/frontend" Enter; \
 		tmux new-window -t $$SESSION; \
 		tmux select-window -t $$SESSION:1; \
 		tmux attach-session -t $$SESSION; \

@@ -27,9 +27,12 @@ services:
       dockerfile: Dockerfile
     develop:
       watch:
-        - action: sync
-          path: ./backend
-          target: /app
+        - action: sync+restart
+          path: ./backend/app
+          target: /app/app
+          ignore:
+            - __pycache__
+            - "**/*.pyc"
         - action: rebuild
           path: ./backend/pyproject.toml
     ports:

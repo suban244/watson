@@ -56,6 +56,7 @@ async def get_transaction_list(
 async def search_transactions(
     transaction_search: TransactionSearch,
     session: AsyncSession = Depends(get_session),
+    pagination: PaginationPageSize = Depends(Pagination().page_size),
     filters: TransactionFilter = Depends(TransactionFilter.get_filterset),
 ):
     search_transactions_query = (
@@ -66,17 +67,9 @@ async def search_transactions(
                 Transaction.__table__.c.title, *transaction_search.search_query.split()
             ),
             *filters.get_conditions(),
-        ).order_by(
-            # pdb.score(Transaction.id)
         )
-        # .order_by(
-        #     text(
-        #         "3 * (title <@> to_bm25query(:query, 'ix_transaction_title_bm25'))"
-        #         " + COALESCE(description <@> to_bm25query(:query, 'ix_transaction_description_bm25'), 0)"
-        #     )
-        # )
-        .limit(10)
-        # .params(query=transaction_search.search_query)
+        .offset((pagination.page - 1) * pagination.size)
+        .limit(pagination.size)
     )
 
     result = await session.execute(search_transactions_query)

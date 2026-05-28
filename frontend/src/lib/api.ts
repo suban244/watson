@@ -40,14 +40,18 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 	return res.json() as Promise<T>;
 }
 
-export const listTransactions = (page = 1, size = 100): Promise<Transaction[]> =>
-	request('GET', `/transactions/list/?page=${page}&size=${size}`);
+export const listTransactions = (page = 1, size = 500): Promise<Transaction[]> => {
+	const params = new URLSearchParams({ page: String(page), size: String(size) });
+	return request('GET', `/transactions/list/?${params}`);
+};
 
 export const getCategories = (): Promise<string[]> =>
 	request('GET', '/transactions/categories/');
 
-export const searchTransactions = (query: string): Promise<Transaction[]> =>
-	request('POST', '/transactions/search/', { search_query: query });
+export const searchTransactions = (query: string, page = 1, size = 500): Promise<Transaction[]> => {
+	const params = new URLSearchParams({ page: String(page), size: String(size) });
+	return request('POST', `/transactions/search/?${params}`, { search_query: query });
+};
 
 export const getTransaction = (id: string): Promise<Transaction> =>
 	request('GET', `/transactions/${id}/`);

@@ -12,7 +12,7 @@ from schema.transaction import (
 from api.helpers.pagination import Pagination, PaginationPageSize
 from api.helpers.filtering import TransactionFilter
 from sqlalchemy import select
-from paradedb.sqlalchemy import search, pdb, select_with
+from paradedb.sqlalchemy import search
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()

@@ -1,0 +1,6 @@
+# Format: email,multiplier,Name
+# multiplier: 1.0 = base price, 1.5 = 50% more, etc.
+shresprbn@gmail.com,1.0,Shresprbn
+subanshrestha244@gmail.com,1.0,Suban
+bajracharya.yunika@gmail.com,1.0,Yuu
+spramesh.shrestha@gmail.com,2.0,Popu

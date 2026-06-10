@@ -18,5 +18,12 @@ class Settings(BaseSettings):
     LOGFIRE_TOKEN: str | None = None
     INTERNAL_API_TOKEN: str
 
+    # Prabin Spotify invoice email task
+    EXTERNAL_PRABIN_EMAIL_SMTP_SERVER: str = "smtp.gmail.com"
+    EXTERNAL_PRABIN_EMAIL_SMTP_PORT: int = 587
+    EXTERNAL_PRABIN_EMAIL_SENDER: str = ""
+    EXTERNAL_PRABIN_EMAIL_PASSWORD: str = ""
+    EXTERNAL_PRABIN_EMAIL_SENDER_NAME: str = "Invoice Sender"
+
 
 settings = Settings()  # type: ignore

@@ -8,7 +8,10 @@ from pydantic_ai.providers.openrouter import OpenRouterProvider
 
 import discord
 
-from bot.agent.tools.query_database import query_database_function, query_function_description
+from bot.agent.tools.query_database import (
+    query_database_function,
+    query_function_description,
+)
 from bot.services.db_service import db_service
 from bot.schema import DiscordTransaction
 from config import settings

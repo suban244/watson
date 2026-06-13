@@ -12,8 +12,12 @@ from config import settings
 class SingleExpense(BaseModel):
     title: str = Field(...)
     description: str | None
-    amount: int = Field(..., description="Amount in NPR. Round it to the ceiling if in decimal.")
-    transaction_date: str | None = Field(..., description="Transaction date in yyyy-mm-dd format, if available")
+    amount: int = Field(
+        ..., description="Amount in NPR. Round it to the ceiling if in decimal."
+    )
+    transaction_date: str | None = Field(
+        ..., description="Transaction date in yyyy-mm-dd format, if available"
+    )
 
 
 class Expenses(BaseModel):
@@ -44,7 +48,9 @@ class ExpenseProcessor(BaseNode[State, None, Expenses]):
     image_url: str
 
     async def run(self, ctx: GraphRunContext[State]) -> End[Expenses]:
-        res = await expense_extractor_agent.run(user_prompt=[ImageUrl(url=self.image_url)])
+        res = await expense_extractor_agent.run(
+            user_prompt=[ImageUrl(url=self.image_url)]
+        )
         return End(data=res.output)
 
 
@@ -56,7 +62,9 @@ class CannotClassify(BaseModel):
     pass
 
 
-document_classifier = Agent[None, FinancialDocument | CannotClassify](
+document_classifier = Agent[
+    None, FinancialDocument | CannotClassify
+](
     model=model,
     output_type=FinancialDocument | CannotClassify,  # type: ignore
     system_prompt=(
@@ -70,7 +78,9 @@ document_classifier = Agent[None, FinancialDocument | CannotClassify](
 class Classifier(BaseNode[State, None, Expenses | CannotClassify]):
     image_url: str
 
-    async def run(self, ctx: GraphRunContext[State]) -> ExpenseProcessor | End[CannotClassify]:
+    async def run(
+        self, ctx: GraphRunContext[State]
+    ) -> ExpenseProcessor | End[CannotClassify]:
         res = await document_classifier.run(user_prompt=[ImageUrl(url=self.image_url)])
         if isinstance(res.output, FinancialDocument):
             return ExpenseProcessor(image_url=self.image_url)

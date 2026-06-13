@@ -13,16 +13,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter()
 
 
-@router.get("/by-message/{discord_message_id}/", response_model=DiscordConversationRead | None)
+@router.get(
+    "/by-message/{discord_message_id}/", response_model=DiscordConversationRead | None
+)
 async def find_conversation_by_message(
     discord_message_id: int,
     session: AsyncSession = Depends(get_session),
 ):
     result = await session.execute(
         select(DiscordConversation).where(
-            DiscordConversation.message_ids.contains(
-                cast([discord_message_id], JSONB)
-            )
+            DiscordConversation.message_ids.contains(cast([discord_message_id], JSONB))
         )
     )
     return result.scalar_one_or_none()
@@ -35,7 +35,9 @@ async def get_conversation(
 ):
     row = await session.get(DiscordConversation, conversation_id)
     if row is None:
-        return DiscordConversationRead(conversation_id=conversation_id, messages=[], message_ids=[])
+        return DiscordConversationRead(
+            conversation_id=conversation_id, messages=[], message_ids=[]
+        )
     return row
 
 

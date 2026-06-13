@@ -28,4 +28,6 @@ async def query_database_function(plan: str, query: str) -> str:
         return str(e)
 
 
-query_function_description = f"Run SQL query on transaction table {DDL_TRANSACTION_TABLE}"
+query_function_description = (
+    f"Run SQL query on transaction table {DDL_TRANSACTION_TABLE}"
+)

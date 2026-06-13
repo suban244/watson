@@ -1,24 +1,23 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from agent.tools.query_database import (
-    query_database_function,
-    query_function_description,
-)
-from core.config import settings
-from core.schema import ExpenseCategory, Transaction
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext, Tool
 from pydantic_ai.models.openrouter import OpenRouterModel
 from pydantic_ai.providers.openrouter import OpenRouterProvider
-from services.db_proxy import db_proxy
 
-from discord.message import Message
+import discord
+
+from bot.agent.tools.query_database import query_database_function, query_function_description
+from bot.services.db_service import db_service
+from bot.schema import DiscordTransaction
+from config import settings
+from schema.transaction import ExpenseCategory
 
 
 def instructions() -> str:
     date_today = datetime.now(ZoneInfo("Asia/Kathmandu")).date()
-    PROMPT = f"""\
+    return f"""\
 You are a finance agent that helps users manage their expenses.
 The currency is NPR (Nepalese Rupee).
 
@@ -46,24 +45,24 @@ Here is your workflow for basic actions
 
 Date Today: {date_today}
 """
-    return PROMPT
 
 
 class Context(BaseModel):
-    message: Message
+    message: discord.Message
     send_final_response: bool = True
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = {"arbitrary_types_allowed": True}
 
 
-model = OpenRouterModel(
-    model_name="openai/gpt-oss-120b",
-    provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
-)
+def _make_model() -> OpenRouterModel:
+    return OpenRouterModel(
+        model_name="openai/gpt-oss-120b",
+        provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
+    )
+
 
 finance_agent = Agent(
-    model=model,
+    model=_make_model(),
     instructions=instructions,
     deps_type=Context,
     tools=[
@@ -76,13 +75,11 @@ finance_agent = Agent(
 )
 
 
-def date_from_string(date_str: str | None) -> datetime | None:
+def _date_from_string(date_str: str | None) -> datetime | None:
     NEPAL_TZ = ZoneInfo("Asia/Kathmandu")
-    """Convert a date string in YYYY-MM-DD format to a timezone-aware datetime object (Nepal time)."""
     try:
         if not date_str:
             return datetime.now(tz=NEPAL_TZ)
-
         dt = datetime.strptime(date_str, "%Y-%m-%d")
         return dt.replace(tzinfo=NEPAL_TZ)
     except ValueError:
@@ -101,25 +98,24 @@ async def add_expense(
     Args:
         title: A brief description of the expense (e.g., "Lunch at cafe").
         amount: The cost of the expense in NPR (e.g., 500.0).
-        category: The category of the expense
-        date: The date of the expense in YYYY-MM-DD format. Do not include the date if the expense is for today.
+        category: The category of the expense.
+        date: The date of the expense in YYYY-MM-DD format. Omit if the expense is for today.
     """
     if not category:
         category = ExpenseCategory.MISC
 
-    date_obj = date_from_string(date)
+    date_obj = _date_from_string(date)
     if not date_obj:
         return "Invalid date format. Please use YYYY-MM-DD."
 
-    expense = Transaction(
+    expense = DiscordTransaction(
         amount=amount,
         date=date_obj,
         title=title,
         category=category,
         is_expense=True,
     )
-    await db_proxy.add_transaction(expense)
-
+    await db_service.add_transaction(expense)
     return f"Expense added: {expense.title} on {expense.date} for {expense.amount} in category {expense.category.value}."
 
 
@@ -129,7 +125,7 @@ async def search_expenses(ctx: RunContext[Context], search_query: str) -> str:
     Args:
         search_query: A string to search for in the title or description of expenses (e.g., "food", "transport").
     """
-    results = await db_proxy.search_transactions(search_query)
+    results = await db_service.search_transactions(search_query)
     if not results:
         return "No expenses found matching your query."
 
@@ -143,6 +139,7 @@ async def search_expenses(ctx: RunContext[Context], search_query: str) -> str:
 async def end_action(
     ctx: RunContext[Context], *, success: bool, reason: str | None = None
 ) -> str:
+    """Signal the end of the action and whether it was successful."""
     await ctx.deps.message.add_reaction("✅" if success else "❌")
     ctx.deps.send_final_response = False
     return "ended successfully"

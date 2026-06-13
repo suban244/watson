@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
+from .endpoints.discord_message import router as discord_message_router
 from .endpoints.transaction import router as transaction_router
 from db.session import get_session
 from sqlalchemy import text
@@ -34,6 +35,9 @@ router = APIRouter()
 router.get("/")(lambda: {"Hello": "Welcome To Watson Router"})
 
 router.include_router(transaction_router, prefix="/transactions", tags=["transactions"])
+router.include_router(
+    discord_message_router, prefix="/discord-messages", tags=["discord-messages"]
+)
 
 
 @router.post(

@@ -64,19 +64,5 @@ services:
     ports: []
     command: /app/start-beat.sh
 
-  discord: &discord
-    build:
-      context: ./discord
-      dockerfile: Dockerfile
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./discord
-          target: /app
-        - action: rebuild
-          path: ./discord/pyproject.toml
-    env_file:
-      - .env
-
 volumes:
   db-data:

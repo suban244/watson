@@ -13,10 +13,8 @@ dev:
 		tmux new-window -t $$SESSION; \
 		tmux new-window -t $$SESSION -n "backend"; \
 		tmux send-keys -t $$SESSION:3 "cd $(PWD)/backend" Enter; \
-		tmux new-window -t $$SESSION -n "discord"; \
-		tmux send-keys -t $$SESSION:4 "cd $(PWD)/discord" Enter; \
 		tmux new-window -t $$SESSION -n "frontend"; \
-		tmux send-keys -t $$SESSION:5 "cd $(PWD)/frontend" Enter; \
+		tmux send-keys -t $$SESSION:4 "cd $(PWD)/frontend" Enter; \
 		tmux new-window -t $$SESSION; \
 		tmux select-window -t $$SESSION:1; \
 		tmux attach-session -t $$SESSION; \
@@ -26,21 +24,12 @@ run_local:
 	@echo "Running in local mode with docker."
 	docker compose -f local.yml up --build --watch
 
-
-# DOES NOT WORK
-.ONESHELL:
-venv: ${PWD}/discord/.venv/bin/activate
-	@echo "Activating Virtual Environment"
-	source $(PWD)/discord/.venv/bin/activate && python --version
-	python --version
-	@echo done
-
 prod:
-	@echo "Running in local mode with docker."
+	@echo "Running in production mode with docker."
 	docker compose -f prod.yml up --build
 
 stop_prod:
-	@echo "Stopping in local mode with docker."
+	@echo "Stopping production mode."
 	docker compose -f prod.yml down
 
 uv_lock:
@@ -71,3 +60,7 @@ migrate:
 downgrade:
 	@echo "Downgrading database."
 	uv run --directory ./backend/app --env-file ../../.env alembic downgrade -1
+
+alembic_current:
+	@echo "Current database revision."
+	uv run --directory ./backend/app --env-file ../../.env alembic current

@@ -1,21 +1,23 @@
 [project]
-name = "watson-fastapi"
+name = "watson"
 version = "0.1.0"
-description = "Add your description here"
+description = "Watson - unified FastAPI + Discord bot service"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
-    "fastapi[standard]>=0.112.1",
-    "pydantic-settings>=2.8.1",
-    "SQLAlchemy>=2.0.38",
-    "alembic>=1.15.1",
-    "asyncpg==0.30.0",
-    "logfire[fastapi,sqlalchemy]==3.9.0",
-    "taskiq>=0.12.2",
-    "taskiq-redis>=1.2.2",
-    "redis>=6.4.0",
-    "psycopg[binary,pool]>=3.3.2",
+    "fastapi[standard]>=0.136.3",
+    "pydantic-settings>=2.14.1",
+    "SQLAlchemy>=2.0.50",
+    "alembic>=1.18.4",
+    "asyncpg==0.31.0",
+    "psycopg[binary,pool]>=3.3.4",
     "sqlalchemy-paradedb>=0.6.0",
+    "taskiq>=0.12.4",
+    "taskiq-redis>=1.2.2",
+    "redis>=7.4.0",
+    "logfire[fastapi,sqlalchemy,httpx]>=4.33.0",
+    "discord-py>=2.7.1",
+    "pydantic-ai-slim[mistral,openrouter]>=1.101.0",
 ]
 
 [dependency-groups]

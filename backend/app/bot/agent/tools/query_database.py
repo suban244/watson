@@ -1,4 +1,4 @@
-from services.db_proxy import db_proxy
+from bot.services.db_service import db_service
 
 DDL_TRANSACTION_TABLE = """\
 CREATE TABLE public.transactions (
@@ -18,16 +18,14 @@ CREATE TABLE public.transactions (
 
 
 async def query_database_function(plan: str, query: str) -> str:
-    """Run Sql query on the transaction table
+    """Run SQL query on the transaction table
     {TABLE_SCHEMA}
     """.format(TABLE_SCHEMA=DDL_TRANSACTION_TABLE)
     try:
-        result = await db_proxy.run_sql(query)
-        return result
+        result = await db_service.run_sql(query)
+        return str(result)
     except Exception as e:
         return str(e)
 
 
-query_function_description = (
-    f"Run SQL query on transaction table {DDL_TRANSACTION_TABLE}"
-)
+query_function_description = f"Run SQL query on transaction table {DDL_TRANSACTION_TABLE}"

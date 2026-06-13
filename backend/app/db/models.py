@@ -1,9 +1,18 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Index, String, Text, column
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    DateTime,
+    Float,
+    Index,
+    String,
+    Text,
+    column,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import func
 from paradedb.sqlalchemy import indexing
@@ -64,6 +73,25 @@ class Transaction(PrimaryUUIDTimestamped):
             indexing.BM25Field(column("description")),
             postgresql_using="bm25",
             postgresql_with={"key_field": "id"},
+        ),
+    )
+
+
+class DiscordConversation(PrimaryTimestamped):
+    __tablename__ = "discord_conversations"
+
+    conversation_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    messages: Mapped[list] = mapped_column(
+        MutableList.as_mutable(JSONB), nullable=False, default=list
+    )
+    message_ids: Mapped[list] = mapped_column(
+        MutableList.as_mutable(JSONB), nullable=False, default=list
+    )
+    __table_args__ = (
+        Index(
+            "ix_discord_conversations_message_ids",
+            "message_ids",
+            postgresql_using="gin",
         ),
     )
 

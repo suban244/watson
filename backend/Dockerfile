@@ -1,18 +1,18 @@
-FROM ghcr.io/astral-sh/uv:python3.12-alpine
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
 WORKDIR /app
 
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev gcc curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY pyproject.toml uv.lock /app/
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache postgresql-libs curl && \
-    apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev && \
-    uv sync --frozen --no-dev && \
-    apk --purge del .build-deps
+    uv sync --frozen --no-dev
 
 COPY ./app /app/app
 

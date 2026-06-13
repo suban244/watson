@@ -16,7 +16,7 @@ services:
       - db-data:/var/lib/postgresql
     env_file:
       - .env
-    command: postgres -c shared_preload_libraries=pg_textsearch
+    command: postgres -c shared_preload_libraries=pg_search
     healthcheck:
       test:
         [

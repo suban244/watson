@@ -30,22 +30,6 @@ def upgrade() -> None:
         existing_nullable=False,
     )
     op.create_index(
-        "ix_transaction_description_bm25",
-        "transactions",
-        ["description"],
-        unique=False,
-        postgresql_using="bm25",
-        postgresql_with={"text_config": "english"},
-    )
-    op.create_index(
-        "ix_transaction_title_bm25",
-        "transactions",
-        ["title"],
-        unique=False,
-        postgresql_using="bm25",
-        postgresql_with={"text_config": "english"},
-    )
-    op.create_index(
         "ix_transactions_category", "transactions", ["category"], unique=False
     )
     op.create_index("ix_transactions_date", "transactions", ["date"], unique=False)
@@ -61,18 +45,6 @@ def downgrade() -> None:
     op.drop_index("ix_transactions_is_expense", table_name="transactions")
     op.drop_index("ix_transactions_date", table_name="transactions")
     op.drop_index("ix_transactions_category", table_name="transactions")
-    op.drop_index(
-        "ix_transaction_title_bm25",
-        table_name="transactions",
-        postgresql_using="bm25",
-        postgresql_with={"text_config": "english"},
-    )
-    op.drop_index(
-        "ix_transaction_description_bm25",
-        table_name="transactions",
-        postgresql_using="bm25",
-        postgresql_with={"text_config": "english"},
-    )
     op.alter_column(
         "transactions",
         "title",

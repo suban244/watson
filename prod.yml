@@ -16,7 +16,7 @@ services:
       - db-data:/var/lib/postgresql
     env_file:
       - .env
-    command: postgres -c shared_preload_libraries=pg_textsearch
+    command: postgres -c shared_preload_libraries=pg_search
     healthcheck:
       test:
         [
@@ -48,8 +48,6 @@ services:
       dockerfile: Dockerfile
     expose:
       - "8000"
-    # ports:
-    #   - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -60,7 +58,6 @@ services:
       IS_DOCKER: "true"
     env_file: [.env]
     healthcheck:
-      # ensure wget or curl exists in the image; curl is more common
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/health/ || exit 1"]
       interval: 2m
       timeout: 3s
@@ -79,16 +76,6 @@ services:
         condition: service_healthy
     command: /app/start-worker.sh
     env_file: [.env]
-    # Optional: basic liveness check (adjust queue/app names)
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "celery -A app.celery_app inspect ping -d celery@$$HOSTNAME | grep -q 'pong'",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     restart: unless-stopped
     networks: [back]
 
@@ -101,12 +88,6 @@ services:
         condition: service_healthy
     command: /app/start-beat.sh
     env_file: [.env]
-    # Optional: check that the beat process is running
-    healthcheck:
-      test: ["CMD-SHELL", "pgrep -f 'celery(.*)beat' >/dev/null"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
     restart: unless-stopped
     networks: [back]
 
@@ -114,20 +95,5 @@ services:
     image: cloudflare/cloudflared:2025.10.1
     restart: unless-stopped
     networks: [back]
-    # volumes:
-    #   - ./cloudflared/config.yml:/etc/cloudflared/config.yml:ro
-    # Token-based tunnel; config.yml defines ingress rules.
-    # Route traffic to frontend (Nginx), not backend directly.
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN} --protocol http2
     env_file: [.env]
-
-  discord:
-    build:
-      context: ./discord
-      dockerfile: Dockerfile
-    depends_on:
-      backend:
-        condition: service_healthy
-    env_file: [.env]
-    restart: unless-stopped
-    networks: [back]

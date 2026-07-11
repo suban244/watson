@@ -8,8 +8,8 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=true
 WorkingDirectory=/home/suban/Documents/watson
-ExecStart=/usr/bin/make prod
-ExecStop=/usr/bin/docker stop_prod
+ExecStart=/usr/bin/docker compose -f prod.yml up -d
+ExecStop=/usr/bin/docker compose -f prod.yml down
 TimeoutStartSec=0
 
 [Install]

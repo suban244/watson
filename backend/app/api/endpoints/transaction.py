@@ -1,6 +1,5 @@
 import uuid
 
-from db.models import Transaction
 from db.session import get_session
 from fastapi import APIRouter, Depends, HTTPException
 from schema.transaction import (
@@ -11,8 +10,7 @@ from schema.transaction import (
 )
 from api.helpers.pagination import Pagination, PaginationPageSize
 from api.helpers.filtering import TransactionFilter
-from sqlalchemy import select
-from paradedb.sqlalchemy import search
+from services import transactions as transaction_service
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
@@ -23,14 +21,7 @@ async def create_transaction(
     transaction: TransactionCreate,
     session: AsyncSession = Depends(get_session),
 ):
-    new_transaction = Transaction(
-        **transaction.model_dump(),
-    )
-
-    session.add(new_transaction)
-    await session.commit()
-    await session.refresh(new_transaction)
-    return new_transaction
+    return await transaction_service.create_transaction(session, transaction)
 
 
 @router.get("/list/", response_model=list[TransactionRead])
@@ -39,17 +30,12 @@ async def get_transaction_list(
     pagination: PaginationPageSize = Depends(Pagination().page_size),
     filters: TransactionFilter = Depends(TransactionFilter.get_filterset),
 ):
-    get_all_transactions_query = (
-        select(Transaction)
-        .where(*filters.get_conditions())
-        .order_by(Transaction.created_at.desc())
-        .offset((pagination.page - 1) * pagination.size)
-        .limit(pagination.size)
+    return await transaction_service.list_transactions(
+        session,
+        conditions=filters.get_conditions(),
+        offset=(pagination.page - 1) * pagination.size,
+        limit=pagination.size,
     )
-    result = await session.execute(get_all_transactions_query)
-    db_transactions = result.scalars().all()
-
-    return db_transactions
 
 
 @router.post("/search/", response_model=list[TransactionRead])
@@ -59,40 +45,25 @@ async def search_transactions(
     pagination: PaginationPageSize = Depends(Pagination().page_size),
     filters: TransactionFilter = Depends(TransactionFilter.get_filterset),
 ):
-    search_transactions_query = (
-        select(Transaction)
-        # use table column (ColumnElement) instead of InstrumentedAttribute to satisfy typing
-        .where(
-            search.match_any(
-                Transaction.__table__.c.title, *transaction_search.search_query.split()
-            ),
-            *filters.get_conditions(),
-        )
-        .offset((pagination.page - 1) * pagination.size)
-        .limit(pagination.size)
+    return await transaction_service.search_transactions(
+        session,
+        transaction_search.search_query,
+        conditions=filters.get_conditions(),
+        offset=(pagination.page - 1) * pagination.size,
+        limit=pagination.size,
     )
-
-    result = await session.execute(search_transactions_query)
-    db_transactions = result.scalars().all()
-
-    return db_transactions
 
 
 @router.get("/categories/", response_model=list[str])
 async def get_categories(session: AsyncSession = Depends(get_session)):
-    categories_query = (
-        select(Transaction.category).distinct().where(Transaction.category.isnot(None))
-    )
-    result = await session.execute(categories_query)
-    categories = [row[0] for row in result.fetchall()]
-    return categories
+    return await transaction_service.list_categories(session)
 
 
 @router.get("/{transaction_id}/", response_model=TransactionRead)
 async def get_transaction(
     transaction_id: uuid.UUID, session: AsyncSession = Depends(get_session)
 ):
-    transaction = await session.get(Transaction, transaction_id)
+    transaction = await transaction_service.get_transaction(session, transaction_id)
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return transaction
@@ -104,14 +75,11 @@ async def update_transaction(
     transaction_update: TransactionUpdate,
     session: AsyncSession = Depends(get_session),
 ):
-    transaction = await session.get(Transaction, transaction_id)
+    transaction = await transaction_service.update_transaction(
+        session, transaction_id, transaction_update.model_dump(exclude_none=True)
+    )
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
-
-    for key, value in transaction_update.model_dump(exclude_none=True).items():
-        setattr(transaction, key, value)
-
-    await session.commit()
     return transaction
 
 
@@ -120,9 +88,6 @@ async def delete_transaction(
     transaction_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ):
-    transaction = await session.get(Transaction, transaction_id)
-    if transaction is None:
+    deleted = await transaction_service.delete_transaction(session, transaction_id)
+    if not deleted:
         raise HTTPException(status_code=404, detail="Transaction not found")
-
-    await session.delete(transaction)
-    await session.commit()

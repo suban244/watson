@@ -1,7 +1,41 @@
 from datetime import datetime
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
+
+
+class IncomeCategory(StrEnum):
+    SALARY = "salary"
+
+    @classmethod
+    def from_string(cls, value: str) -> "IncomeCategory | None":
+        try:
+            return cls(value)
+        except ValueError:
+            return None
+
+
+class ExpenseCategory(StrEnum):
+    PERSONAL_TRAVEL = "personal_travel"
+    PERSONAL_ITEMS = "personal_items"
+    SNACKS = "snacks"
+    HEALTH = "health"
+    OFFICE_COMMUTE = "office_commute"
+    OFFICE_DAY_FOOD = "office_day_food"
+    PHONE_BILL = "phone_bill"
+    HOME_EXPENSES = "home_expenses"
+    GOING_OUT_WITH_FRIENDS = "going_out_with_friends"
+    UTILITIES = "utilities"
+    GIFTS = "gifts"
+    MISC = "misc"
+
+    @classmethod
+    def from_string(cls, value: str) -> "ExpenseCategory | None":
+        try:
+            return cls(value)
+        except ValueError:
+            return None
 
 
 class Transaction(BaseModel):

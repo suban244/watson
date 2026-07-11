@@ -1,9 +1,8 @@
 from pydantic_ai import Agent
-
 from pydantic_ai.models.mistral import MistralModel
 from pydantic_ai.providers.mistral import MistralProvider
-from core.config import settings
 
+from config import settings
 
 model = MistralModel(
     "mistral-medium-2508", provider=MistralProvider(api_key=settings.MISTRAL_API_KEY)

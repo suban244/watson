@@ -11,7 +11,7 @@ services:
       - db-data:/var/lib/postgresql
     env_file:
       - .env
-    command: postgres -c shared_preload_libraries=pg_textsearch,pg_search
+    command: postgres -c shared_preload_libraries=pg_search
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -63,20 +63,6 @@ services:
       - redis
     ports: []
     command: /app/start-beat.sh
-
-  discord: &discord
-    build:
-      context: ./discord
-      dockerfile: Dockerfile
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./discord
-          target: /app
-        - action: rebuild
-          path: ./discord/pyproject.toml
-    env_file:
-      - .env
 
 volumes:
   db-data:

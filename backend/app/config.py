@@ -18,6 +18,14 @@ class Settings(BaseSettings):
     LOGFIRE_TOKEN: str | None = None
     INTERNAL_API_TOKEN: str
 
+    # Discord bot
+    DISCORD_TOKEN: str = ""
+    SOURCE_CHANNEL_ID: str = ""
+
+    # AI providers
+    MISTRAL_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
+
     # Prabin Spotify invoice email task
     EXTERNAL_PRABIN_EMAIL_SMTP_SERVER: str = "smtp.gmail.com"
     EXTERNAL_PRABIN_EMAIL_SMTP_PORT: int = 587

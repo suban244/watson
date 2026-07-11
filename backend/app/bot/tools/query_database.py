@@ -1,4 +1,6 @@
-from services.db_proxy import db_proxy
+from sqlalchemy import text
+
+from db.session import async_session_maker
 
 DDL_TRANSACTION_TABLE = """\
 CREATE TABLE public.transactions (
@@ -18,12 +20,15 @@ CREATE TABLE public.transactions (
 
 
 async def query_database_function(plan: str, query: str) -> str:
-    """Run Sql query on the transaction table
+    """Run SQL query on the transaction table
     {TABLE_SCHEMA}
     """.format(TABLE_SCHEMA=DDL_TRANSACTION_TABLE)
     try:
-        result = await db_proxy.run_sql(query)
-        return result
+        async with async_session_maker() as session:
+            result = await session.execute(
+                text(query), execution_options={"postgresql_readonly": True}
+            )
+            return str([dict(row) for row in result.mappings().all()])
     except Exception as e:
         return str(e)
 

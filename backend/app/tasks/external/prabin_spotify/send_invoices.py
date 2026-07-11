@@ -75,7 +75,9 @@ def _send_one(email: str, html: str, multiplier: float, name: str) -> bool:
 
     msg = MIMEMultipart("related")
     msg["Subject"] = f"Spotify Invoice — {datetime.now().strftime('%B %Y')} 🎵"
-    msg["From"] = f"{settings.EXTERNAL_PRABIN_EMAIL_SENDER_NAME} <{settings.EXTERNAL_PRABIN_EMAIL_SENDER}>"
+    msg["From"] = (
+        f"{settings.EXTERNAL_PRABIN_EMAIL_SENDER_NAME} <{settings.EXTERNAL_PRABIN_EMAIL_SENDER}>"
+    )
     msg["To"] = email
 
     alt = MIMEMultipart("alternative")
@@ -91,9 +93,15 @@ def _send_one(email: str, html: str, multiplier: float, name: str) -> bool:
         msg.attach(img)
 
     try:
-        with smtplib.SMTP(settings.EXTERNAL_PRABIN_EMAIL_SMTP_SERVER, settings.EXTERNAL_PRABIN_EMAIL_SMTP_PORT) as server:
+        with smtplib.SMTP(
+            settings.EXTERNAL_PRABIN_EMAIL_SMTP_SERVER,
+            settings.EXTERNAL_PRABIN_EMAIL_SMTP_PORT,
+        ) as server:
             server.starttls()
-            server.login(settings.EXTERNAL_PRABIN_EMAIL_SENDER, settings.EXTERNAL_PRABIN_EMAIL_PASSWORD)
+            server.login(
+                settings.EXTERNAL_PRABIN_EMAIL_SENDER,
+                settings.EXTERNAL_PRABIN_EMAIL_PASSWORD,
+            )
             server.send_message(msg)
         logfire.info(f"Invoice sent to {email}")
         return True
@@ -104,7 +112,7 @@ def _send_one(email: str, html: str, multiplier: float, name: str) -> bool:
 
 @broker.task
 def send_prabin_spotify_invoices() -> dict:
-    with logfire.span("starting email job"): 
+    with logfire.span("starting email job"):
         recipients = _load_recipients()
         if not recipients:
             return {"success": 0, "failed": 0, "total": 0}
@@ -113,10 +121,14 @@ def send_prabin_spotify_invoices() -> dict:
         results = {"success": 0, "failed": 0, "total": len(recipients)}
 
         for r in recipients:
-            if _send_one(r["email"], base_html, r.get("multiplier", 1.0), r.get("name", "")):
+            if _send_one(
+                r["email"], base_html, r.get("multiplier", 1.0), r.get("name", "")
+            ):
                 results["success"] += 1
             else:
                 results["failed"] += 1
 
-        print(f"Invoice run complete: {results['success']} sent, {results['failed']} failed")
+        print(
+            f"Invoice run complete: {results['success']} sent, {results['failed']} failed"
+        )
         return results

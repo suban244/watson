@@ -24,14 +24,14 @@ async def main() -> None:
         )
     )
 
-    # 11th of each month 9:00 AM Asia/Kathmandu = 3:15 AM UTC
+    # 28th of each month 9:00 AM Asia/Kathmandu = 3:15 AM UTC
     await source.add_schedule(
         ScheduledTask(
             task_name=send_prabin_spotify_invoices.task_name,
             labels={},
             args=[],
             kwargs={},
-            cron="15 3 1 * *",
+            cron="15 3 28 * *",
         )
     )
 

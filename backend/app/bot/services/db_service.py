@@ -43,6 +43,25 @@ class DBService:
             ]
 
     @logfire.instrument(record_return=True)
+    async def list_recent_transactions(
+        self, limit: int = 10, *, is_expense: bool | None = None
+    ) -> list[dict]:
+        async with async_session_maker() as session:
+            query = (
+                select(TransactionModel)
+                .order_by(TransactionModel.created_at.desc())
+                .limit(limit)
+            )
+            if is_expense is not None:
+                query = query.where(TransactionModel.is_expense == is_expense)
+            result = await session.execute(query)
+            transactions = result.scalars().all()
+            return [
+                TransactionRead.model_validate(t).model_dump(mode="json")
+                for t in transactions
+            ]
+
+    @logfire.instrument(record_return=True)
     async def get_transaction(self, transaction_id: uuid.UUID) -> dict | None:
         async with async_session_maker() as session:
             transaction = await session.get(TransactionModel, transaction_id)

@@ -22,3 +22,8 @@ extend-select = ["FBT"]
 
 [tool.uv]
 exclude-newer = "2 weeks"
+
+[dependency-groups]
+dev = [
+    "pyclean>=3.7.0",
+]

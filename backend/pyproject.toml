@@ -15,9 +15,9 @@ dependencies = [
     "taskiq>=0.12.4",
     "taskiq-redis>=1.2.2",
     "redis>=7.4.0",
-    "logfire[fastapi,sqlalchemy,httpx]>=4.33.0",
+    "logfire[fastapi,httpx,openai,sqlalchemy]>=4.33.0",
     "discord-py>=2.7.1",
-    "pydantic-ai-slim[mistral,openrouter]>=1.101.0",
+    "pydantic-ai-slim[mistral,openrouter]>=2.0",
 ]
 
 [dependency-groups]
@@ -27,4 +27,4 @@ dev = [
 ]
 
 [tool.uv]
-exclude-newer = "2 weeks"
+exclude-newer = "1 weeks"

@@ -6,8 +6,6 @@ from fastapi import FastAPI
 
 from api import router as api_router
 from config import settings
-from services.messaging import messaging_service
-from tasks import add
 
 
 @asynccontextmanager
@@ -37,6 +35,7 @@ logfire.configure(
 logfire.instrument_fastapi(app, capture_headers=True)
 logfire.instrument_pydantic_ai()
 logfire.instrument_httpx()
+logfire.instrument_openai()
 
 
 @app.get("/")
@@ -47,13 +46,6 @@ def read_root():
 @app.get("/health/")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/tasks/")
-async def task():
-    await add.kiq(4, 6)
-    messaging_service.send_message("New task added: add(4, 6)", channel="default")
-    return {"status": "Task added"}
 
 
 app.include_router(api_router, prefix="/api/v1")

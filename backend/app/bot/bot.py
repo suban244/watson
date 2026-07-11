@@ -7,15 +7,10 @@ from discord.message import Message
 from discord.utils import setup_logging
 from redis.asyncio.client import Redis
 
-from bot.agent.base_finance_agent import Context, finance_agent
+from bot.agent.watson import watson_agent, SuccessMarker
 from bot.agent.financial_tasks import summary_agent
-from bot.services.attachment_processor import (
-    Classifier,
-    Expenses,
-    State,
-    attachment_processor,
-)
-from bot.services.conversation import conversation_service
+from bot.workflows.attachment_processor import Expenses, process_attachment
+from services.conversation import conversation_service
 from config import settings
 
 intents = discord.Intents.default()
@@ -38,23 +33,14 @@ async def on_message(message: Message):
 
     await message.add_reaction("👀")
 
-    context = Context(message=message)
-
     attachment_results = await asyncio.gather(
-        *[
-            attachment_processor.run(
-                start_node=Classifier(image_url=attachment.url), state=State()
-            )
-            for attachment in message.attachments
-        ]
+        *[process_attachment(attachment.url) for attachment in message.attachments]
     )
     message_content = message.content
     for result in attachment_results:
-        if isinstance(result.output, Expenses):
-            logfire.info(
-                f"Parsed expenses: {result.output}", expense_items=result.output
-            )
-            message_content += f"\nParsed Expenses from attachment:\n{result.output}"
+        if isinstance(result, Expenses):
+            logfire.info(f"Parsed expenses: {result}", expense_items=result)
+            message_content += f"\nParsed Expenses from attachment:\n{result}"
 
     reference_id = message.reference.message_id if message.reference else None
     (
@@ -62,27 +48,27 @@ async def on_message(message: Message):
         conversation_id,
     ) = await conversation_service.get_or_create_conversation(message.id, reference_id)
 
-    response = await finance_agent.run(
-        message_content, deps=context, message_history=message_history
-    )
+    result = await watson_agent.run(message_content, message_history=message_history)
     logfire.debug(
         "Agent response",
-        response=response.output,
-        new_messages=response.new_messages(),
-        new_messages_json=response.new_messages_json(),
+        response=result.output,
+        new_messages=result.new_messages(),
+        new_messages_json=result.new_messages_json(),
     )
 
     await conversation_service.append_conversation(
         conversation_id,
-        list(response.new_messages()),
+        list(result.new_messages()),
         [message.id],
     )
 
-    if context.send_final_response:
-        response = await message.channel.send(response.output)
+    if isinstance(result.output.response, SuccessMarker):
+        await message.add_reaction("✅")
+    else:
+        sent = await message.channel.send(result.output.response)
         await conversation_service.append_conversation(
             conversation_id,
-            message_ids=[response.id],
+            message_ids=[sent.id],
         )
 
 

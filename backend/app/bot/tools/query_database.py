@@ -1,4 +1,6 @@
-from bot.services.db_service import db_service
+from sqlalchemy import text
+
+from db.session import async_session_maker
 
 DDL_TRANSACTION_TABLE = """\
 CREATE TABLE public.transactions (
@@ -22,8 +24,11 @@ async def query_database_function(plan: str, query: str) -> str:
     {TABLE_SCHEMA}
     """.format(TABLE_SCHEMA=DDL_TRANSACTION_TABLE)
     try:
-        result = await db_service.run_sql(query)
-        return str(result)
+        async with async_session_maker() as session:
+            result = await session.execute(
+                text(query), execution_options={"postgresql_readonly": True}
+            )
+            return str([dict(row) for row in result.mappings().all()])
     except Exception as e:
         return str(e)
 

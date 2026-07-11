@@ -91,9 +91,9 @@ services:
     restart: unless-stopped
     networks: [back]
 
-  cloudflared:
-    image: cloudflare/cloudflared:2025.10.1
-    restart: unless-stopped
-    networks: [back]
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN} --protocol http2
-    env_file: [.env]
+  # cloudflared:
+  #   image: cloudflare/cloudflared:2025.10.1
+  #   restart: unless-stopped
+  #   networks: [back]
+  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN} --protocol http2
+  #   env_file: [.env]

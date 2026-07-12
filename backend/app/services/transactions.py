@@ -97,4 +97,3 @@ async def delete_transaction(session: AsyncSession, transaction_id: uuid.UUID) -
     await session.delete(transaction)
     await session.commit()
     return True
-

@@ -27,7 +27,7 @@ Rules:
 
 Date Today: {date_today}
 
-You will use 
+You will use
 """
 
 

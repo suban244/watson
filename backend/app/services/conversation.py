@@ -57,7 +57,11 @@ class ConversationService:
         messages: list[ModelMessage] | None = None,
         message_ids: list[int] | None = None,
     ) -> None:
-        messages_dicts = ModelMessagesTypeAdapter.dump_python(messages, mode="json") if messages else []
+        messages_dicts = (
+            ModelMessagesTypeAdapter.dump_python(messages, mode="json")
+            if messages
+            else []
+        )
         ids = message_ids or []
 
         conflict_set: dict = {"updated_at": func.now()}

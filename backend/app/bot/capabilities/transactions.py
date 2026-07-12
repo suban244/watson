@@ -36,7 +36,6 @@ def format_transaction(transaction: Transaction) -> str:
     )
 
 
-
 transactions = Capability(
     id="transactions",
     description="Record, search, and correct expenses and income.",

@@ -10,21 +10,9 @@ from bot.tools.query_database import (
 from db.session import async_session_maker
 from schema.transaction import ExpenseCategory, IncomeCategory, TransactionCreate
 from services import transactions as transaction_service
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from utils.timezone import parse_date
 
 from db.models import Transaction
-
-
-def date_from_string(date_str: str | None) -> datetime | None:
-    NEPAL_TZ = ZoneInfo("Asia/Kathmandu")
-    try:
-        if not date_str:
-            return datetime.now(tz=NEPAL_TZ)
-        dt = datetime.strptime(date_str, "%Y-%m-%d")
-        return dt.replace(tzinfo=NEPAL_TZ)
-    except ValueError:
-        return None
 
 
 def format_transaction(transaction: Transaction) -> str:
@@ -39,7 +27,15 @@ def format_transaction(transaction: Transaction) -> str:
 transactions = Capability(
     id="transactions",
     description="Record, search, and correct expenses and income.",
-    instructions="""\
+    instructions=f"""\
+Expense-tracking domain:
+- The currency is NPR (Nepalese Rupee); assume amounts are in NPR unless the
+  user says otherwise.
+- Never show raw transaction ids to the user; they are for tool calls only.
+
+Domain keywords:
+- Pathao: a ride-hailing service in Nepal (usually a transport expense).
+
 Transaction workflows:
 1. Simple Expense Addition:
     - Trigger: User gives you a cost and a title of a expense.
@@ -49,14 +45,14 @@ Transaction workflows:
             - No need to ask for the date if not provided
             - If no category is clear from context, omit it (it will default to misc)
         2. Call the `add_expense` tool with the extracted information.
-        3. Return Success as your response.
+        3. You can only return success_marker as your response. 
 
 2. Income Addition:
     - Trigger: User mentions receiving money.
     - User: "Got my salary of <amount>", "Received <amount> from <source>."
     - Steps:
         1. Call the `add_income` tool with the extracted information.
-        2. Return Success as your response.
+        2. You can only return success_marker as your response.
 
 3. Search / Query Expenses:
     - Trigger: User asks to find, look up, or list expenses matching a description.
@@ -69,12 +65,17 @@ Transaction workflows:
 
 4. Corrections:
     - Trigger: User wants to fix or remove a transaction.
-    - User: "That was 400, not 500", "Delete that last one", "That lunch was actually snacks."
+    - User: "That was 400, not 500", "Delete that last one", "That lunch was actually going_out."
     - Steps:
-        1. Find the transaction id using `list_recent_transactions` or `search_expenses`
-           (use the conversation context to pick the right one).
+        1. Find the transaction id 
+            - Use id in history if available
+            - If not, search for it using `search_expenses` or `list_recent_transactions` 
+            and ask the user to confirm which one they mean.
         2. Call `update_transaction` or `delete_transaction` with that id.
         3. Return Success as your response.
+
+Expense categories (pick the closest fit; omit if genuinely unclear, defaults to misc):
+{ExpenseCategory.reference()}
 """,
     tools=[
         Tool(
@@ -97,13 +98,15 @@ async def add_expense(
     Args:
         title: A brief description of the expense (e.g., "Lunch at cafe").
         amount: The cost of the expense in NPR (e.g., 500.0).
-        category: The category of the expense.
+        category: The expense category. Pick the closest fit; omit if genuinely
+            unclear (defaults to misc). See the "Expense categories" reference in
+            your instructions for what each one covers.
         date: The date of the expense in YYYY-MM-DD format. Omit if the expense is for today.
     """
     if not category:
         category = ExpenseCategory.MISC
 
-    date_obj = date_from_string(date)
+    date_obj = parse_date(date)
     if not date_obj:
         return "Invalid date format. Please use YYYY-MM-DD."
 
@@ -137,7 +140,7 @@ async def add_income(
     if not category:
         category = IncomeCategory.SALARY
 
-    date_obj = date_from_string(date)
+    date_obj = parse_date(date)
     if not date_obj:
         return "Invalid date format. Please use YYYY-MM-DD."
 
@@ -221,7 +224,7 @@ async def update_transaction(
         if value is not None
     }
     if date is not None:
-        date_obj = date_from_string(date)
+        date_obj = parse_date(date)
         if not date_obj:
             return "Invalid date format. Please use YYYY-MM-DD."
         updates["date"] = date_obj

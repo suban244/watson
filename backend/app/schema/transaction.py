@@ -17,18 +17,51 @@ class IncomeCategory(StrEnum):
 
 
 class ExpenseCategory(StrEnum):
-    PERSONAL_TRAVEL = "personal_travel"
-    PERSONAL_ITEMS = "personal_items"
-    SNACKS = "snacks"
-    HEALTH = "health"
-    OFFICE_COMMUTE = "office_commute"
-    OFFICE_DAY_FOOD = "office_day_food"
-    PHONE_BILL = "phone_bill"
-    HOME_EXPENSES = "home_expenses"
-    GOING_OUT_WITH_FRIENDS = "going_out_with_friends"
-    UTILITIES = "utilities"
-    GIFTS = "gifts"
-    MISC = "misc"
+    """Expense categories. Each member carries a human/LLM-facing description so
+    the value and its purpose stay in one place; `reference()` renders them for
+    the bot's instructions."""
+
+    description: str
+
+    def __new__(cls, value: str, description: str = "") -> "ExpenseCategory":
+        obj = str.__new__(cls, value)
+        obj._value_ = value
+        obj.description = description
+        return obj
+
+    GROCERIES = "groceries", "Food and drink bought to prepare or eat at home."
+    DINING_OUT = "dining_out", "Meals, snacks or coffee bought and eaten outside home."
+    TRANSPORT = "transport", "Day-to-day rides, fuel and fares for getting around."
+    TRAVEL = "travel", "Multi-day trips and vacations (fares, lodging, etc.)."
+    GOING_OUT = (
+        "going_out",
+        "Casual social hangouts with friends (drinks, dinners) — defined by the company.",
+    )
+    EXPERIENCES = (
+        "experiences",
+        "Paid activities, events and hobbies defined by the activity itself (concerts, tickets, climbing, workshops), solo or not.",
+    )
+    HEALTH = "health", "Medicine, doctor or dental visits, fitness and wellness."
+    EDUCATION = "education", "Courses, books, certifications and tuition."
+    UTILITIES = (
+        "utilities",
+        "Recurring home services — electricity, water, phone, internet.",
+    )
+    SUBSCRIPTIONS = (
+        "subscriptions",
+        "Recurring digital services and memberships (streaming, software, apps).",
+    )
+    HOUSEHOLD = (
+        "household",
+        "Home supplies and costs — toiletries, cleaning, kitchenware, rent, maintenance.",
+    )
+    PERSONAL_ITEMS = (
+        "personal_items",
+        "Things for yourself — clothing, grooming, gadgets, accessories.",
+    )
+    GIFTS = "gifts", "Presents for a person or occasion (birthday, wedding)."
+    FAMILY = "family", "Money given to parents, siblings or relatives as support."
+    MISC = "misc", "Anything that doesn't fit another category."
 
     @classmethod
     def from_string(cls, value: str) -> "ExpenseCategory | None":
@@ -36,6 +69,11 @@ class ExpenseCategory(StrEnum):
             return cls(value)
         except ValueError:
             return None
+
+    @classmethod
+    def reference(cls) -> str:
+        """Render `- value: description` lines for the bot's instructions."""
+        return "\n".join(f"- {m.value}: {m.description}" for m in cls)
 
 
 class Transaction(BaseModel):

@@ -1,65 +1,48 @@
+from collections.abc import AsyncGenerator, Generator
 from contextlib import contextmanager
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
-from .engine import build_connection_string
-from sqlalchemy.ext.asyncio import AsyncSession
-from collections.abc import AsyncGenerator
+
 from sqlalchemy.engine import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from collections.abc import Generator
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import Session, sessionmaker
+
+from .engine import build_connection_string
 
 ASYNC_DATABASE_URL = build_connection_string(is_async=True)
 SYNC_DATABASE_URL = build_connection_string()
 
-engine: AsyncEngine = create_async_engine(
-    ASYNC_DATABASE_URL,
-    pool_size=20,
-    max_overflow=20,
-    pool_recycle=3600,
-    pool_timeout=60,
-)
+# Small pools: single-user app on a Raspberry Pi, keep Postgres memory low.
+POOL_OPTIONS = dict(pool_size=5, max_overflow=5, pool_recycle=3600, pool_timeout=60)
+
+engine: AsyncEngine = create_async_engine(ASYNC_DATABASE_URL, **POOL_OPTIONS)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
+# Only the taskiq worker uses sync sessions; create the engine lazily so the
+# API/bot process never opens a second connection pool.
+_sync_session_maker: sessionmaker[Session] | None = None
 
-sync_engine = create_engine(
-    SYNC_DATABASE_URL,
-    pool_size=20,
-    max_overflow=20,
-    pool_recycle=3600,
-    pool_timeout=60,
-)
-sync_session_maker = sessionmaker(sync_engine)
+
+def _get_sync_session_maker() -> sessionmaker[Session]:
+    global _sync_session_maker
+    if _sync_session_maker is None:
+        _sync_session_maker = sessionmaker(
+            create_engine(SYNC_DATABASE_URL, **POOL_OPTIONS)
+        )
+    return _sync_session_maker
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """Create a database session with tenant isolation.
-
-    Yields:
-        AsyncSession: Database session with tenant context
-
-    Raises:
-        SQLAlchemyError: For database-related errors
-        ValueError: If tenant ID is invalid
-    """
     async with async_session_maker() as session:
-        try:
-            yield session
-        except SQLAlchemyError as e:
-            print(f"Database session error: {e}")
-            await session.rollback()
-            raise
-        except ValueError as e:
-            print(f"Invalid tenant ID: {e}")
-            raise
-        except Exception as e:
-            print(f"Unexpected error in session: {e}")
-            await session.rollback()
-            raise
+        yield session
 
 
 @contextmanager
 def sync_session_manager() -> Generator[Session, None, None]:
-    session = sync_session_maker()
+    session = _get_sync_session_maker()()
     try:
         yield session
     except Exception:

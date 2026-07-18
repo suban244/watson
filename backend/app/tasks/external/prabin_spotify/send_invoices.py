@@ -1,3 +1,4 @@
+import asyncio
 import re
 import smtplib
 from datetime import datetime, timedelta
@@ -68,7 +69,9 @@ def _apply_multiplier(html: str, multiplier: float) -> str:
     return re.sub(r"\$(\d+\.?\d*)", _mul, html)
 
 
-def _send_one(email: str, html: str, multiplier: float, name: str) -> bool:
+def send_invoice(email: str, multiplier: float = 1.0, name: str = "") -> bool:
+    """Render the invoice template and email it to a single recipient."""
+    html = _inject_globals(_TEMPLATE.read_text(encoding="utf-8"))
     html = html.replace("{{CUSTOMER_NAME}}", name)
     if multiplier != 1.0:
         html = _apply_multiplier(html, multiplier)
@@ -111,18 +114,18 @@ def _send_one(email: str, html: str, multiplier: float, name: str) -> bool:
 
 
 @broker.task
-def send_prabin_spotify_invoices() -> dict:
+async def send_prabin_spotify_invoices() -> dict:
     with logfire.span("starting email job"):
         recipients = _load_recipients()
         if not recipients:
             return {"success": 0, "failed": 0, "total": 0}
 
-        base_html = _inject_globals(_TEMPLATE.read_text(encoding="utf-8"))
         results = {"success": 0, "failed": 0, "total": len(recipients)}
 
         for r in recipients:
-            if _send_one(
-                r["email"], base_html, r.get("multiplier", 1.0), r.get("name", "")
+            # send_invoice does blocking SMTP; keep it off the event loop.
+            if await asyncio.to_thread(
+                send_invoice, r["email"], r.get("multiplier", 1.0), r.get("name", "")
             ):
                 results["success"] += 1
             else:

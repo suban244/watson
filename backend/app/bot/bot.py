@@ -7,7 +7,7 @@ from discord.message import Message
 from discord.utils import setup_logging
 from redis.asyncio.client import Redis
 
-from bot.agent.watson import watson_agent, SuccessMarker
+from bot.agent.watson import watson_agent
 from bot.agent.financial_tasks import summary_agent
 from bot.workflows.attachment_processor import Expenses, process_attachment
 from services.conversation import conversation_service
@@ -62,14 +62,16 @@ async def on_message(message: Message):
         [message.id],
     )
 
-    if isinstance(result.output.response, SuccessMarker):
+    if result.output.success_marker:
         await message.add_reaction("✅")
-    else:
-        sent = await message.channel.send(result.output.response)
-        await conversation_service.append_conversation(
-            conversation_id,
-            message_ids=[sent.id],
-        )
+
+    if isinstance(result.output.response, str):
+        if result.output.response.strip():
+            sent = await message.channel.send(result.output.response)
+            await conversation_service.append_conversation(
+                conversation_id,
+                message_ids=[sent.id],
+            )
 
 
 async def _handle_redis_message(data: str) -> None:
@@ -107,21 +109,19 @@ async def _check_task_queue() -> None:
     pubsub = async_redis.pubsub()
     await pubsub.subscribe("default")
     try:
-        while True:
+        async for message in pubsub.listen():
+            if message.get("type") != "message":
+                continue
+            data = message["data"]
+            if isinstance(data, bytes):
+                data = data.decode("utf-8")
             try:
-                message = await pubsub.get_message(
-                    ignore_subscribe_messages=True, timeout=1.0
-                )
-                if message and "data" in message:
-                    data = message["data"]
-                    if isinstance(data, bytes):
-                        data = data.decode("utf-8")
-                    await _handle_redis_message(data)
+                await _handle_redis_message(data)
             except Exception as e:
                 logfire.error(f"Error processing Redis Pub/Sub message: {e}")
     finally:
         await pubsub.unsubscribe()
-        await async_redis.close()
+        await async_redis.aclose()
 
 
 async def run() -> None:

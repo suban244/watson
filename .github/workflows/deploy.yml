@@ -1,0 +1,30 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Never let two deploys run at once (e.g. two quick pushes).
+concurrency:
+  group: deploy-pi
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    # The deploy directory on the Pi. It already holds the (gitignored) .env,
+    # so we operate on it directly instead of using actions/checkout.
+    env:
+      DEPLOY_DIR: /home/suban/Documents/watson
+    steps:
+      - name: Update deploy directory to latest main
+        run: |
+          cd "$DEPLOY_DIR"
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Build and restart stack
+        run: |
+          cd "$DEPLOY_DIR"
+          bash deployment/deploy.sh

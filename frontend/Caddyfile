@@ -1,0 +1,20 @@
+# Single ingress for the Watson dashboard.
+# TLS is terminated by Tailscale Serve on the host, so Caddy speaks plain HTTP
+# on :80 inside the container and is only reachable via 127.0.0.1 on the Pi.
+:80 {
+	# API calls (relative /api/v1 from the browser, see src/lib/api.ts) go to
+	# the backend container on the internal `back` network.
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# Everything else is the static SvelteKit build. try_files falls back to
+	# index.html so client-side routes (/transactions, /analytics, ...) resolve.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	encode gzip
+}

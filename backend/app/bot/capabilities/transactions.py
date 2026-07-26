@@ -27,6 +27,7 @@ def format_transaction(transaction: Transaction) -> str:
 transactions = Capability(
     id="transactions",
     description="Record, search, and correct expenses and income.",
+    defer_loading=True,
     instructions=f"""\
 Expense-tracking domain:
 - The currency is NPR (Nepalese Rupee); assume amounts are in NPR unless the
@@ -45,7 +46,7 @@ Transaction workflows:
             - No need to ask for the date if not provided
             - If no category is clear from context, omit it (it will default to misc)
         2. Call the `add_expense` tool with the extracted information.
-        3. You can only return success_marker as your response. 
+        3. You can only return success_marker as your response.
 
 2. Income Addition:
     - Trigger: User mentions receiving money.
@@ -67,9 +68,9 @@ Transaction workflows:
     - Trigger: User wants to fix or remove a transaction.
     - User: "That was 400, not 500", "Delete that last one", "That lunch was actually going_out."
     - Steps:
-        1. Find the transaction id 
+        1. Find the transaction id
             - Use id in history if available
-            - If not, search for it using `search_expenses` or `list_recent_transactions` 
+            - If not, search for it using `search_expenses` or `list_recent_transactions`
             and ask the user to confirm which one they mean.
         2. Call `update_transaction` or `delete_transaction` with that id.
         3. Return Success as your response.

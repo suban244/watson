@@ -1,3 +1,4 @@
-from .transactions import transactions as watson_capabilities
+from .reminders import reminders
+from .transactions import transactions
 
-__all__ = ["watson_capabilities"]
+__all__ = ["transactions", "reminders"]

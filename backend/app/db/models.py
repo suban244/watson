@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
     BigInteger,
@@ -75,6 +76,25 @@ class Transaction(PrimaryUUIDTimestamped):
             postgresql_with={"key_field": "id"},
         ),
     )
+
+
+class ReminderStatus(StrEnum):
+    PENDING = "pending"
+    SENT = "sent"
+    CANCELLED = "cancelled"
+
+
+class Reminder(PrimaryUUIDTimestamped):
+    __tablename__ = "reminders"
+
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    recurrence: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=ReminderStatus.PENDING
+    )
+
+    __table_args__ = (Index("ix_reminders_status_due_at", "status", "due_at"),)
 
 
 class DiscordConversation(PrimaryTimestamped):

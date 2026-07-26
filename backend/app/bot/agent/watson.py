@@ -3,7 +3,7 @@ from pydantic_ai import Agent
 from pydantic_ai.models.openrouter import OpenRouterModel
 from pydantic_ai.providers.openrouter import OpenRouterProvider
 
-from bot.capabilities import watson_capabilities
+from bot.capabilities import reminders, transactions
 from config import settings
 from utils.timezone import now_nepal
 
@@ -56,5 +56,5 @@ watson_agent = Agent(
     model=_make_model(),
     instructions=instructions,
     output_type=AgentResponse,
-    capabilities=[watson_capabilities],
+    capabilities=[transactions, reminders],
 )

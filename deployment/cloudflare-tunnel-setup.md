@@ -35,7 +35,7 @@ CLOUDFLARE_TOKEN=<paste the tunnel token>
 ```
 
 ### 3. Route the hostname to the frontend
-- In the tunnel's **Public Hostname** tab -> **Add a public hostname**:
+- In the tunnel's **Public DNS** tab -> **Add a public hostname**:
   - Subdomain/domain: `watson.<yourdomain>`
   - Service **Type**: `HTTP`
   - **URL**: `frontend:80`
@@ -60,8 +60,9 @@ In the dashboard the tunnel should show **HEALTHY**. Open
 `https://watson.<yourdomain>` -> Cloudflare login -> dashboard.
 
 ## Adding more hostnames later
-Same tunnel serves any number of hostnames. For each: add a Public Hostname
-pointing at the internal service (`service:port` on the `back` network).
+Same tunnel serves any number of hostnames. For each: add an entry under the
+**Public DNS** tab pointing at the internal service (`service:port` on the
+`back` network).
 - **Private** (only you): also create an Access application for that hostname.
 - **Public** (anyone): do NOT create an Access application — leave it ungated.
 

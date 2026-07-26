@@ -48,6 +48,14 @@ export const listTransactions = (page = 1, size = 500): Promise<Transaction[]> =
 export const getCategories = (): Promise<string[]> =>
 	request('GET', '/transactions/categories/');
 
+export interface CategoryOptions {
+	expense: string[];
+	income: string[];
+}
+
+export const getCategoryOptions = (): Promise<CategoryOptions> =>
+	request('GET', '/transactions/categories/options/');
+
 export const searchTransactions = (query: string, page = 1, size = 500): Promise<Transaction[]> => {
 	const params = new URLSearchParams({ page: String(page), size: String(size) });
 	return request('POST', `/transactions/search/?${params}`, { search_query: query });

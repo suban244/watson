@@ -14,70 +14,70 @@
 
 <div class="flex h-screen overflow-hidden">
 	<!-- ── Sidebar ── -->
-	<nav class="flex flex-col w-[220px] min-w-[220px] bg-white border-r border-orange-200 overflow-hidden">
+	<nav class="flex flex-col w-[220px] min-w-[220px] bg-card border-r border-line overflow-hidden">
 
 		<!-- Brand -->
-		<div class="px-5 pt-6 pb-5 border-b border-orange-200">
-			<div class="w-[34px] h-[34px] bg-orange-600 rounded-[10px] flex items-center justify-center text-white font-serif text-base font-semibold mb-[10px]">
+		<div class="px-5 pt-6 pb-5 border-b border-line">
+			<div class="w-[34px] h-[34px] bg-accent rounded-[10px] flex items-center justify-center text-white font-serif text-base font-semibold mb-[10px]">
 				W
 			</div>
-			<div class="font-serif text-[15px] font-semibold text-stone-900 tracking-[0.01em]">Watson Finance</div>
-			<div class="font-mono text-[11px] text-stone-400 mt-px">personal</div>
+			<div class="font-serif text-[15px] font-semibold text-ink tracking-[0.01em]">Watson Finance</div>
+			<div class="font-mono text-[11px] text-ink-3 mt-px">personal</div>
 		</div>
 
 		<!-- Nav items -->
 		<div class="flex-1 overflow-y-auto py-2">
-			<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-stone-400 uppercase tracking-widest font-mono">Overview</p>
+			<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-ink-3 uppercase tracking-widest font-mono">Overview</p>
 
 			<a href="/"
 				class="flex items-center gap-[10px] px-[14px] py-[9px] mx-2 rounded-lg text-sm font-medium no-underline transition-colors
-					{isActive('/') ? 'bg-orange-100 text-orange-700 font-semibold' : 'text-stone-600 hover:bg-orange-50 hover:text-stone-900'}">
+					{isActive('/') ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-2 hover:bg-cream-2 hover:text-ink'}">
 				<div class="w-7 h-7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0 transition-colors
-					{isActive('/') ? 'bg-orange-600 text-white' : 'bg-stone-100'}">⊞</div>
+					{isActive('/') ? 'bg-accent text-white' : 'bg-cream-2'}">⊞</div>
 				Dashboard
 			</a>
 
-			<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-stone-400 uppercase tracking-widest font-mono">Money</p>
+			<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-ink-3 uppercase tracking-widest font-mono">Money</p>
 
 			<a href="/transactions"
 				class="flex items-center gap-[10px] px-[14px] py-[9px] mx-2 rounded-lg text-sm font-medium no-underline transition-colors
-					{isActive('/transactions') ? 'bg-orange-100 text-orange-700 font-semibold' : 'text-stone-600 hover:bg-orange-50 hover:text-stone-900'}">
+					{isActive('/transactions') ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-2 hover:bg-cream-2 hover:text-ink'}">
 				<div class="w-7 h-7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0 transition-colors
-					{isActive('/transactions') ? 'bg-orange-600 text-white' : 'bg-stone-100'}">⇅</div>
+					{isActive('/transactions') ? 'bg-accent text-white' : 'bg-cream-2'}">⇅</div>
 				Transactions
 			</a>
 
 			<a href="/budget"
 				class="flex items-center gap-[10px] px-[14px] py-[9px] mx-2 rounded-lg text-sm font-medium no-underline transition-colors
-					{isActive('/budget') ? 'bg-orange-100 text-orange-700 font-semibold' : 'text-stone-600 hover:bg-orange-50 hover:text-stone-900'}">
+					{isActive('/budget') ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-2 hover:bg-cream-2 hover:text-ink'}">
 				<div class="w-7 h-7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0 transition-colors
-					{isActive('/budget') ? 'bg-orange-600 text-white' : 'bg-stone-100'}">◧</div>
+					{isActive('/budget') ? 'bg-accent text-white' : 'bg-cream-2'}">◧</div>
 				Budget
 			</a>
 
-			<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-stone-400 uppercase tracking-widest font-mono">Insights</p>
+			<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-ink-3 uppercase tracking-widest font-mono">Insights</p>
 
 			<a href="/analytics"
 				class="flex items-center gap-[10px] px-[14px] py-[9px] mx-2 rounded-lg text-sm font-medium no-underline transition-colors
-					{isActive('/analytics') ? 'bg-orange-100 text-orange-700 font-semibold' : 'text-stone-600 hover:bg-orange-50 hover:text-stone-900'}">
+					{isActive('/analytics') ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-2 hover:bg-cream-2 hover:text-ink'}">
 				<div class="w-7 h-7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0 transition-colors
-					{isActive('/analytics') ? 'bg-orange-600 text-white' : 'bg-stone-100'}">◟</div>
+					{isActive('/analytics') ? 'bg-accent text-white' : 'bg-cream-2'}">◟</div>
 				Analytics
 			</a>
 		</div>
 
 		<!-- Footer -->
-		<div class="px-5 py-4 border-t border-orange-200 flex items-center gap-[10px]">
-			<div class="w-[34px] h-[34px] rounded-full bg-orange-100 border-2 border-orange-600 flex items-center justify-center text-[12px] font-semibold text-orange-600 shrink-0">W</div>
+		<div class="px-5 py-4 border-t border-line flex items-center gap-[10px]">
+			<div class="w-[34px] h-[34px] rounded-full bg-accent-soft border-2 border-accent flex items-center justify-center text-[12px] font-semibold text-accent shrink-0">W</div>
 			<div>
-				<div class="text-[13px] font-semibold text-stone-900">Watson</div>
-				<div class="font-mono text-[11px] text-stone-400">personal</div>
+				<div class="text-[13px] font-semibold text-ink">Watson</div>
+				<div class="font-mono text-[11px] text-ink-3">personal</div>
 			</div>
 		</div>
 	</nav>
 
 	<!-- ── Main content ── -->
-	<main class="flex-1 overflow-y-auto overflow-x-hidden bg-orange-50 w-full">
+	<main class="flex-1 overflow-y-auto overflow-x-hidden bg-cream w-full">
 		{@render children()}
 	</main>
 </div>

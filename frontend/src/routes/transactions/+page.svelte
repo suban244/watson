@@ -1,13 +1,23 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { slide } from 'svelte/transition';
-	import { getCategories, listTransactions, searchTransactions } from '$lib/api';
+	import {
+		getCategories,
+		getCategoryOptions,
+		listTransactions,
+		searchTransactions,
+		deleteTransaction
+	} from '$lib/api';
 	import type { Transaction, TransactionGroup } from '$lib/api';
 	import { formatDateLabel } from '$lib/utils/date';
+	import TransactionFormModal from '$lib/components/TransactionFormModal.svelte';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
 	// --- data ---
 	let transactions = $state<Transaction[]>([]);
 	let categories = $state<string[]>([]);
+	let expenseCategories = $state<string[]>([]);
+	let incomeCategories = $state<string[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
@@ -28,6 +38,12 @@
 
 	// --- row UI ---
 	let openIds = $state(new Set<string>());
+
+	// --- add/edit/delete ---
+	let formModalOpen = $state(false);
+	let editingTransaction = $state<Transaction | null>(null);
+	let confirmOpen = $state(false);
+	let deletingTransaction = $state<Transaction | null>(null);
 
 	// TODO: hybrid fetching — apply filters client-side instantly, then re-fetch from backend
 	// in the background with the same filters and replace results when the response arrives.
@@ -138,9 +154,51 @@
 		openIds = next;
 	}
 
+	function openAddModal() {
+		editingTransaction = null;
+		formModalOpen = true;
+	}
+
+	function openEditModal(tx: Transaction) {
+		editingTransaction = tx;
+		formModalOpen = true;
+	}
+
+	function openDeleteConfirm(tx: Transaction) {
+		deletingTransaction = tx;
+		confirmOpen = true;
+	}
+
+	function upsertTransaction(tx: Transaction) {
+		const applyTo = (list: Transaction[]) => {
+			const idx = list.findIndex((t) => t.id === tx.id);
+			if (idx === -1) return [tx, ...list];
+			const next = [...list];
+			next[idx] = tx;
+			return next;
+		};
+		transactions = applyTo(transactions);
+		if (searchResults) searchResults = applyTo(searchResults);
+		if (tx.category && !categories.includes(tx.category)) {
+			categories = [...categories, tx.category];
+		}
+	}
+
+	function removeTransaction(id: string) {
+		transactions = transactions.filter((t) => t.id !== id);
+		if (searchResults) searchResults = searchResults.filter((t) => t.id !== id);
+	}
+
 	onMount(async () => {
 		try {
-			[transactions, categories] = await Promise.all([listTransactions(1, 500), getCategories()]);
+			let categoryOptions;
+			[transactions, categories, categoryOptions] = await Promise.all([
+				listTransactions(1, 500),
+				getCategories(),
+				getCategoryOptions()
+			]);
+			expenseCategories = categoryOptions.expense;
+			incomeCategories = categoryOptions.income;
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load transactions';
 		} finally {
@@ -153,17 +211,18 @@
 	<!-- Page header -->
 	<div class="mb-6 flex items-end justify-between">
 		<div>
-			<h1 class="font-serif text-[22px] font-semibold text-stone-900">Transactions</h1>
-			<p class="mt-[3px] font-mono text-[12px] text-stone-400">All activity · newest first</p>
+			<h1 class="font-serif text-[22px] font-semibold text-ink">Transactions</h1>
+			<p class="mt-[3px] font-mono text-[12px] text-ink-3">All activity · newest first</p>
 		</div>
 		<div class="flex gap-2">
 			<button
-				class="cursor-pointer rounded-lg border border-orange-200 bg-white px-[18px] py-[9px] text-[13px] font-semibold text-stone-600 transition-all hover:-translate-y-px hover:opacity-90"
+				class="cursor-pointer rounded-lg border border-line bg-card px-[18px] py-[9px] text-[13px] font-semibold text-ink-2 transition-all hover:-translate-y-px hover:opacity-90"
 			>
 				↓ Import
 			</button>
 			<button
-				class="cursor-pointer rounded-lg bg-orange-600 px-[18px] py-[9px] text-[13px] font-semibold text-white transition-all hover:-translate-y-px hover:opacity-90"
+				onclick={openAddModal}
+				class="cursor-pointer rounded-lg bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-white transition-all hover:-translate-y-px hover:opacity-90"
 			>
 				+ Add
 			</button>
@@ -171,23 +230,23 @@
 	</div>
 
 	{#if loading}
-		<p class="font-mono text-[12px] text-stone-400">Loading transactions…</p>
+		<p class="font-mono text-[12px] text-ink-3">Loading transactions…</p>
 	{:else if error}
-		<p class="font-mono text-[12px] text-red-600">{error}</p>
+		<p class="font-mono text-[12px] text-negative">{error}</p>
 	{:else}
 		<!-- Filter bar -->
-		<div class="rounded-t-[14px] border border-orange-200 bg-white">
+		<div class="rounded-t-[14px] border border-line bg-card">
 			<div class="flex flex-wrap items-center gap-[10px] p-4">
 				<!-- Search -->
 				<div
-					class="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-[14px] py-2"
+					class="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-line bg-cream-2 px-[14px] py-2"
 				>
 					<span class="text-[14px] opacity-40">🔍</span>
 					<input
 						type="text"
 						placeholder="Search description…"
 						bind:value={searchQuery}
-						class="flex-1 bg-transparent font-mono text-[12px] text-stone-700 placeholder-stone-400 outline-none"
+						class="flex-1 bg-transparent font-mono text-[12px] text-ink-2 placeholder-ink-3 outline-none"
 					/>
 				</div>
 
@@ -196,8 +255,8 @@
 					onclick={() => { categoryOpen = !categoryOpen; dateRangeOpen = false; amountOpen = false; }}
 					class="cursor-pointer rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
 						{categoryOpen || selectedCategories.size > 0
-						? 'border-orange-600 bg-orange-100 text-orange-600'
-						: 'border-orange-200 bg-white text-stone-600 hover:border-orange-400 hover:text-orange-600'}"
+						? 'border-accent bg-accent-soft text-accent'
+						: 'border-line bg-card text-ink-2 hover:border-accent hover:text-accent'}"
 				>
 					Category ▾
 				</button>
@@ -207,8 +266,8 @@
 					onclick={() => { dateRangeOpen = !dateRangeOpen; categoryOpen = false; }}
 					class="cursor-pointer rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
 						{dateRangeOpen || dateFrom || dateTo
-						? 'border-orange-600 bg-orange-100 text-orange-600'
-						: 'border-orange-200 bg-white text-stone-600 hover:border-orange-400 hover:text-orange-600'}"
+						? 'border-accent bg-accent-soft text-accent'
+						: 'border-line bg-card text-ink-2 hover:border-accent hover:text-accent'}"
 				>
 					Date range ▾
 				</button>
@@ -218,23 +277,23 @@
 					onclick={() => { amountOpen = !amountOpen; categoryOpen = false; dateRangeOpen = false; }}
 					class="cursor-pointer rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
 						{amountOpen || amountMin || amountMax
-						? 'border-orange-600 bg-orange-100 text-orange-600'
-						: 'border-orange-200 bg-white text-stone-600 hover:border-orange-400 hover:text-orange-600'}"
+						? 'border-accent bg-accent-soft text-accent'
+						: 'border-line bg-card text-ink-2 hover:border-accent hover:text-accent'}"
 				>
 					Amount ▾
 				</button>
 			</div>
 			{#if categoryOpen}
 				<div
-					class="flex flex-wrap gap-2 border-t border-orange-100 px-4 py-3"
+					class="flex flex-wrap gap-2 border-t border-line px-4 py-3"
 					transition:slide={{ duration: 150 }}
 				>
 					<button
 						onclick={() => (selectedCategories = new Set())}
 						class="cursor-pointer rounded-lg border px-3 py-[6px] font-mono text-[11px] font-medium transition-colors
 							{selectedCategories.size === 0
-							? 'border-orange-600 bg-orange-100 text-orange-600'
-							: 'border-orange-200 bg-white text-stone-600 hover:border-orange-400'}"
+							? 'border-accent bg-accent-soft text-accent'
+							: 'border-line bg-card text-ink-2 hover:border-accent'}"
 					>
 						All
 					</button>
@@ -248,8 +307,8 @@
 							}}
 							class="cursor-pointer rounded-lg border px-3 py-[6px] font-mono text-[11px] font-medium transition-colors
 								{selectedCategories.has(cat)
-								? 'border-orange-600 bg-orange-100 text-orange-600'
-								: 'border-orange-200 bg-white text-stone-600 hover:border-orange-400'}"
+								? 'border-accent bg-accent-soft text-accent'
+								: 'border-line bg-card text-ink-2 hover:border-accent'}"
 						>
 							{cat}
 						</button>
@@ -259,7 +318,7 @@
 
 			{#if amountOpen}
 				<div
-					class="flex flex-col gap-3 border-t border-orange-100 px-4 py-3"
+					class="flex flex-col gap-3 border-t border-line px-4 py-3"
 					transition:slide={{ duration: 150 }}
 				>
 					<!-- Presets -->
@@ -272,7 +331,7 @@
 						] as preset}
 							<button
 								onclick={() => setAmountPreset(preset.min, preset.max)}
-								class="cursor-pointer rounded-lg border border-orange-200 bg-white px-3 py-[5px] font-mono text-[11px] text-stone-600 transition-colors hover:border-orange-400 hover:text-orange-600"
+								class="cursor-pointer rounded-lg border border-line bg-card px-3 py-[5px] font-mono text-[11px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
 							>
 								{preset.label}
 							</button>
@@ -280,21 +339,21 @@
 					</div>
 					<!-- Custom range -->
 					<div class="flex items-center gap-3">
-						<span class="font-mono text-[9px] uppercase tracking-widest text-stone-400">Min Rs.</span>
+						<span class="font-mono text-[9px] uppercase tracking-widest text-ink-3">Min Rs.</span>
 						<input
 							type="number"
 							min="0"
 							placeholder="0"
 							bind:value={amountMin}
-							class="w-24 rounded-lg border border-orange-200 bg-orange-50 px-3 py-[6px] font-mono text-[12px] text-stone-700 outline-none focus:border-orange-400"
+							class="w-24 rounded-lg border border-line bg-cream-2 px-3 py-[6px] font-mono text-[12px] text-ink-2 outline-none focus:border-accent"
 						/>
-						<span class="font-mono text-[9px] uppercase tracking-widest text-stone-400">Max Rs.</span>
+						<span class="font-mono text-[9px] uppercase tracking-widest text-ink-3">Max Rs.</span>
 						<input
 							type="number"
 							min="0"
 							placeholder="∞"
 							bind:value={amountMax}
-							class="w-24 rounded-lg border border-orange-200 bg-orange-50 px-3 py-[6px] font-mono text-[12px] text-stone-700 outline-none focus:border-orange-400"
+							class="w-24 rounded-lg border border-line bg-cream-2 px-3 py-[6px] font-mono text-[12px] text-ink-2 outline-none focus:border-accent"
 						/>
 					</div>
 				</div>
@@ -302,7 +361,7 @@
 
 			{#if dateRangeOpen}
 				<div
-					class="flex flex-col gap-3 border-t border-orange-100 px-4 py-3"
+					class="flex flex-col gap-3 border-t border-line px-4 py-3"
 					transition:slide={{ duration: 150 }}
 				>
 					<!-- Presets -->
@@ -317,7 +376,7 @@
 						] as preset}
 							<button
 								onclick={() => setDatePreset(preset.key as Parameters<typeof setDatePreset>[0])}
-								class="cursor-pointer rounded-lg border border-orange-200 bg-white px-3 py-[5px] font-mono text-[11px] text-stone-600 transition-colors hover:border-orange-400 hover:text-orange-600"
+								class="cursor-pointer rounded-lg border border-line bg-card px-3 py-[5px] font-mono text-[11px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
 							>
 								{preset.label}
 							</button>
@@ -325,17 +384,17 @@
 					</div>
 					<!-- Custom range -->
 					<div class="flex items-center gap-3">
-						<span class="font-mono text-[9px] uppercase tracking-widest text-stone-400">From</span>
+						<span class="font-mono text-[9px] uppercase tracking-widest text-ink-3">From</span>
 						<input
 							type="date"
 							bind:value={dateFrom}
-							class="cursor-pointer rounded-lg border border-orange-200 bg-orange-50 px-3 py-[6px] font-mono text-[12px] text-stone-700 outline-none focus:border-orange-400"
+							class="cursor-pointer rounded-lg border border-line bg-cream-2 px-3 py-[6px] font-mono text-[12px] text-ink-2 outline-none focus:border-accent"
 						/>
-						<span class="font-mono text-[9px] uppercase tracking-widest text-stone-400">To</span>
+						<span class="font-mono text-[9px] uppercase tracking-widest text-ink-3">To</span>
 						<input
 							type="date"
 							bind:value={dateTo}
-							class="cursor-pointer rounded-lg border border-orange-200 bg-orange-50 px-3 py-[6px] font-mono text-[12px] text-stone-700 outline-none focus:border-orange-400"
+							class="cursor-pointer rounded-lg border border-line bg-cream-2 px-3 py-[6px] font-mono text-[12px] text-ink-2 outline-none focus:border-accent"
 						/>
 					</div>
 				</div>
@@ -343,12 +402,12 @@
 
 			{#if hasActiveFilters}
 				<div
-					class="flex flex-wrap items-center gap-2 border-t border-orange-100 px-4 py-3"
+					class="flex flex-wrap items-center gap-2 border-t border-line px-4 py-3"
 					transition:slide={{ duration: 150 }}
 				>
-					<span class="font-mono text-[9px] uppercase tracking-widest text-stone-400">Active:</span>
+					<span class="font-mono text-[9px] uppercase tracking-widest text-ink-3">Active:</span>
 					{#each selectedCategories as cat}
-						<span class="inline-flex items-center gap-[5px] rounded-full bg-stone-900 py-[3px] pl-3 pr-[6px] font-mono text-[10px] text-white">
+						<span class="inline-flex items-center gap-[5px] rounded-full bg-ink py-[3px] pl-3 pr-[6px] font-mono text-[10px] text-white">
 							{cat}
 							<button
 								onclick={() => {
@@ -361,7 +420,7 @@
 						</span>
 					{/each}
 					{#if amountMin || amountMax}
-						<span class="inline-flex items-center gap-[5px] rounded-full bg-stone-900 py-[3px] pl-3 pr-[6px] font-mono text-[10px] text-white">
+						<span class="inline-flex items-center gap-[5px] rounded-full bg-ink py-[3px] pl-3 pr-[6px] font-mono text-[10px] text-white">
 							{formatAmountChip(amountMin, amountMax)}
 							<button
 								onclick={() => { amountMin = ''; amountMax = ''; }}
@@ -370,7 +429,7 @@
 						</span>
 					{/if}
 					{#if dateFrom || dateTo}
-						<span class="inline-flex items-center gap-[5px] rounded-full bg-stone-900 py-[3px] pl-3 pr-[6px] font-mono text-[10px] text-white">
+						<span class="inline-flex items-center gap-[5px] rounded-full bg-ink py-[3px] pl-3 pr-[6px] font-mono text-[10px] text-white">
 							{formatDateChip(dateFrom, dateTo)}
 							<button
 								onclick={() => { dateFrom = ''; dateTo = ''; }}
@@ -380,7 +439,7 @@
 					{/if}
 					<button
 						onclick={clearAll}
-						class="cursor-pointer rounded-lg border border-orange-200 bg-white px-[10px] py-[3px] text-[11px] font-medium text-stone-600 transition-colors hover:border-orange-400"
+						class="cursor-pointer rounded-lg border border-line bg-card px-[10px] py-[3px] text-[11px] font-medium text-ink-2 transition-colors hover:border-accent"
 					>
 						Clear all
 					</button>
@@ -390,35 +449,35 @@
 
 		<!-- Summary bar -->
 		<div
-			class="flex items-center justify-between border border-t-0 border-orange-200 bg-white px-5 py-2"
+			class="flex items-center justify-between border border-t-0 border-line bg-card px-5 py-2"
 		>
-			<span class="font-mono text-[11px] text-stone-600">
-				<strong class="text-stone-900">{totalTransactions}</strong> transactions &nbsp;·&nbsp;
-				<strong class="text-red-700">-Rs. {totalExpenses.toFixed(2)}</strong> total
+			<span class="font-mono text-[11px] text-ink-2">
+				<strong class="text-ink">{totalTransactions}</strong> transactions &nbsp;·&nbsp;
+				<strong class="text-negative">-Rs. {totalExpenses.toFixed(2)}</strong> total
 			</span>
-			<span class="font-mono text-[10px] text-stone-400">newest first</span>
+			<span class="font-mono text-[10px] text-ink-3">newest first</span>
 		</div>
 
 		<!-- Transaction list -->
 		<div
-			class="overflow-hidden rounded-b-[14px] border border-t-0 border-orange-200 bg-white shadow-sm"
+			class="overflow-hidden rounded-b-[14px] border border-t-0 border-line bg-card shadow-sm"
 		>
 			{#if groupedTransactions.length === 0}
-				<p class="px-5 py-10 text-center font-mono text-[12px] text-stone-400">
+				<p class="px-5 py-10 text-center font-mono text-[12px] text-ink-3">
 					No transactions yet
 				</p>
 			{:else}
 				{#each groupedTransactions as group, gi}
 					<div
 						class="{gi > 0
-							? 'border-t border-orange-200'
-							: ''} bg-orange-50 px-5 py-3 font-mono text-[10px] font-medium tracking-widest text-stone-700 uppercase"
+							? 'border-t border-line'
+							: ''} bg-cream-2 px-5 py-3 font-mono text-[10px] font-medium tracking-widest text-ink-2 uppercase"
 					>
 						{group.label}
 					</div>
-					<div class="divide-y divide-orange-100">
+					<div class="divide-y divide-line">
 						{#each group.transactions as tx}
-							<div class="group cursor-pointer transition-colors hover:bg-orange-50">
+							<div class="group cursor-pointer transition-colors hover:bg-cream-2">
 								<div
 									class="grid grid-cols-[28px_1fr_auto_auto_44px] items-center gap-2 px-5 py-3"
 									onclick={() => toggleRow(tx.id)}
@@ -428,43 +487,58 @@
 								>
 									<div
 										class="text-center text-[13px] font-semibold {tx.is_expense
-											? 'text-red-700'
-											: 'text-green-700'}"
+											? 'text-negative'
+											: 'text-positive'}"
 									>
 										{tx.is_expense ? '↓' : '↑'}
 									</div>
-									<div class="text-[14px] font-medium text-stone-900">{tx.title}</div>
+									<div class="text-[14px] font-medium text-ink">{tx.title}</div>
 									<span
 										class="inline-block rounded-full px-[9px] py-[3px] font-mono text-[10px] font-medium {tx.is_expense
-											? 'bg-stone-100 text-stone-600'
-											: 'bg-green-100 text-green-700'}"
+											? 'bg-cream-2 text-ink-2'
+											: 'bg-positive-soft text-positive'}"
 									>
 										{tx.category ?? '—'}
 									</span>
 									<span
 										class="text-right font-mono text-[13px] font-medium {tx.is_expense
-											? 'text-red-700'
-											: 'text-green-700'}"
+											? 'text-negative'
+											: 'text-positive'}"
 									>
 										{tx.is_expense ? '-' : '+'}Rs. {tx.amount.toFixed(2)}
 									</span>
 									<div
-										class="text-right text-[12px] text-stone-400 opacity-0 transition-opacity group-hover:opacity-100"
+										class="flex items-center justify-end gap-2 text-[12px] opacity-0 transition-opacity group-hover:opacity-100"
 									>
-										✏ ✕
+										<button
+											type="button"
+											onclick={(e) => { e.stopPropagation(); openEditModal(tx); }}
+											class="cursor-pointer text-ink-3 hover:text-accent"
+											aria-label="Edit transaction"
+										>
+											✏
+										</button>
+										<button
+											type="button"
+											onclick={(e) => { e.stopPropagation(); openDeleteConfirm(tx); }}
+											class="cursor-pointer text-ink-3 hover:text-negative"
+											aria-label="Delete transaction"
+										>
+											✕
+										</button>
 									</div>
 								</div>
 								{#if openIds.has(tx.id)}
 									<div
-										class="border-t border-dashed border-orange-200 bg-orange-50 px-5 pt-[10px] pb-3 pl-[56px]"
+										class="border-t border-dashed border-line bg-cream-2 px-5 pt-[10px] pb-3 pl-[56px]"
 										transition:slide={{ duration: 200 }}
 									>
 										<div class="flex items-start gap-3">
 											<span
-												class="w-20 shrink-0 pt-[2px] font-mono text-[9px] tracking-widest text-stone-400 uppercase"
+												class="w-20 shrink-0 pt-[2px] font-mono text-[9px] tracking-widest text-ink-3 uppercase"
 												>Description</span
 											>
-											<span class="text-[13px] text-stone-500 italic">
+											<span class="text-[13px] text-ink-2 italic">
 												{tx.description ?? 'No description'}
 											</span>
 										</div>
@@ -478,3 +552,23 @@
 		</div>
 	{/if}
 </div>
+
+<TransactionFormModal
+	bind:open={formModalOpen}
+	transaction={editingTransaction}
+	expenseCategories={expenseCategories}
+	incomeCategories={incomeCategories}
+	onsaved={upsertTransaction}
+/>
+
+<ConfirmModal
+	bind:open={confirmOpen}
+	title="Delete transaction"
+	message={deletingTransaction ? `Delete "${deletingTransaction.title}"? This can't be undone.` : ''}
+	confirmLabel="Delete"
+	onconfirm={async () => {
+		if (!deletingTransaction) return;
+		await deleteTransaction(deletingTransaction.id);
+		removeTransaction(deletingTransaction.id);
+	}}
+/>

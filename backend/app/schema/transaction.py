@@ -111,3 +111,8 @@ class TransactionUpdate(BaseModel):
 
 class TransactionSearch(BaseModel):
     search_query: str
+
+
+class CategoryOptions(BaseModel):
+    expense: list[str]
+    income: list[str]

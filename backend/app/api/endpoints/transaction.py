@@ -3,6 +3,9 @@ import uuid
 from db.session import get_session
 from fastapi import APIRouter, Depends, HTTPException
 from schema.transaction import (
+    CategoryOptions,
+    ExpenseCategory,
+    IncomeCategory,
     TransactionCreate,
     TransactionRead,
     TransactionSearch,
@@ -57,6 +60,14 @@ async def search_transactions(
 @router.get("/categories/", response_model=list[str])
 async def get_categories(session: AsyncSession = Depends(get_session)):
     return await transaction_service.list_categories(session)
+
+
+@router.get("/categories/options/", response_model=CategoryOptions)
+async def get_category_options():
+    return CategoryOptions(
+        expense=[c.value for c in ExpenseCategory],
+        income=[c.value for c in IncomeCategory],
+    )
 
 
 @router.get("/{transaction_id}/", response_model=TransactionRead)

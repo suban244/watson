@@ -5,6 +5,22 @@
   --font-serif: 'Lora', serif;
   --font-sans: 'DM Sans', sans-serif;
   --font-mono: 'DM Mono', monospace;
+
+  --color-cream: #fdf8f2;
+  --color-cream-2: #faf4ec;
+  --color-card: #fffcf7;
+  --color-line: #e6d5be;
+  --color-ink: #2c1f0e;
+  --color-ink-2: #7a5e42;
+  --color-ink-3: #b89a7a;
+  --color-accent: #c4662a;
+  --color-accent-soft: #f4e8df;
+  --color-positive: #2d7a4f;
+  --color-positive-soft: #e2f0e8;
+  --color-negative: #b94040;
+  --color-negative-soft: #f5e5e5;
+  --color-warn: #b97e1a;
+  --color-warn-soft: #fdf3dc;
 }
 
 @layer base {

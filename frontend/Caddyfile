@@ -1,6 +1,7 @@
 # Single ingress for the Watson dashboard.
-# TLS is terminated by Tailscale Serve on the host, so Caddy speaks plain HTTP
-# on :80 inside the container and is only reachable via 127.0.0.1 on the Pi.
+# Public TLS is terminated at Cloudflare's edge; cloudflared forwards plain HTTP
+# to this container over the internal docker network, so Caddy speaks HTTP on :80
+# and publishes no host port.
 :80 {
 	# API calls (relative /api/v1 from the browser, see src/lib/api.ts) go to
 	# the backend container on the internal `back` network.

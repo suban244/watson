@@ -98,17 +98,22 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    # Single ingress: serves the static dashboard and proxies /api -> backend.
-    # Bound to loopback only; Tailscale Serve on the host terminates TLS and is
-    # the sole way in (tailnet-only). Nothing is published to the public LAN.
-    ports:
-      - "127.0.0.1:8080:80"
+    # Serves the static dashboard and proxies /api -> backend. Reached only by
+    # cloudflared over the internal `back` network at frontend:80 — no host port
+    # is published, so the dashboard has zero presence on the Pi's host network.
     restart: unless-stopped
     networks: [back]
 
-  # cloudflared:
-  #   image: cloudflare/cloudflared:2025.10.1
-  #   restart: unless-stopped
-  #   networks: [back]
-  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN} --protocol http2
-  #   env_file: [.env]
+  # Outbound-only tunnel to Cloudflare's edge (TCP/443). No inbound ports, no
+  # router changes, works through CGNAT/UDP-blocked networks. `--protocol http2`
+  # forces TCP (not QUIC/UDP), which is required here since the Pi's network
+  # blocks UDP. Cloudflare Access gates the public hostname to your email; routing
+  # (hostname -> frontend:80) is configured in the Zero Trust dashboard, not here.
+  cloudflared:
+    image: cloudflare/cloudflared:2025.10.1
+    depends_on:
+      - frontend
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN} --protocol http2
+    env_file: [.env]
+    restart: unless-stopped
+    networks: [back]

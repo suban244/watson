@@ -91,6 +91,21 @@ services:
     restart: unless-stopped
     networks: [back]
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    # Single ingress: serves the static dashboard and proxies /api -> backend.
+    # Bound to loopback only; Tailscale Serve on the host terminates TLS and is
+    # the sole way in (tailnet-only). Nothing is published to the public LAN.
+    ports:
+      - "127.0.0.1:8080:80"
+    restart: unless-stopped
+    networks: [back]
+
   # cloudflared:
   #   image: cloudflare/cloudflared:2025.10.1
   #   restart: unless-stopped

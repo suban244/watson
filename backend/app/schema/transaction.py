@@ -30,6 +30,7 @@ class ExpenseCategory(StrEnum):
         return obj
 
     GROCERIES = "groceries", "Food and drink bought to prepare or eat at home."
+    SNACKS = "snacks", "Food and drink bought for snacking (chips, icecream, etc.)."
     DINING_OUT = "dining_out", "Meals, snacks or coffee bought and eaten outside home."
     TRANSPORT = "transport", "Day-to-day rides, fuel and fares for getting around."
     TRAVEL = "travel", "Multi-day trips and vacations (fares, lodging, etc.)."

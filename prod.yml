@@ -61,7 +61,8 @@ services:
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/health/ || exit 1"]
       interval: 2m
       timeout: 3s
-      retries: 1
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
     networks: [back]
 

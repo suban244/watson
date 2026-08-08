@@ -33,7 +33,7 @@ async def list_transactions(
     query = (
         select(Transaction)
         .where(*conditions)
-        .order_by(Transaction.created_at.desc())
+        .order_by(Transaction.date.desc(), Transaction.created_at.desc())
         .offset(offset)
         .limit(limit)
     )
@@ -56,6 +56,7 @@ async def search_transactions(
             search.match_any(Transaction.__table__.c.title, *search_query.split()),
             *conditions,
         )
+        .order_by(Transaction.date.desc(), Transaction.created_at.desc())
         .offset(offset)
         .limit(limit)
     )

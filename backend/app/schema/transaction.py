@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class IncomeCategory(StrEnum):
@@ -85,6 +85,7 @@ class Transaction(BaseModel):
     date: datetime
 
     category: str | None = None
+    tags: list[str] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -106,6 +107,8 @@ class TransactionUpdate(BaseModel):
     date: datetime | None = None
 
     category: str | None = None
+    # None leaves tags untouched; an empty list clears them.
+    tags: list[str] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

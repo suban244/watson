@@ -19,6 +19,7 @@ dependencies = [
     "discord-py>=2.7.1",
     "pydantic-ai-slim[mistral,openrouter]>=2.0",
     "python-dateutil>=2.9.0.post0",
+    "greenlet>=3.5.1",
 ]
 
 [dependency-groups]

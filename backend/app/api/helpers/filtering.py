@@ -2,11 +2,13 @@ from pydantic import BaseModel
 from datetime import date
 from fastapi import Query
 from db.models import Transaction
+from services.tags import slugify
 from sqlalchemy.sql.elements import ColumnElement
 
 
 class TransactionFilter(BaseModel):
     categories: list[str] | None = None
+    tags: list[str] | None = None
 
     date_from: date | None = None
     date_to: date | None = None
@@ -21,6 +23,10 @@ class TransactionFilter(BaseModel):
         *,
         categories: list[str] = Query(
             None, description="Filter transactions by categories"
+        ),
+        tags: list[str] = Query(
+            None,
+            description="Filter to transactions carrying any of these tag slugs",
         ),
         date_from: date = Query(
             None, description="Filter transactions from this date (YYYY-MM-DD)"
@@ -42,6 +48,7 @@ class TransactionFilter(BaseModel):
     ):
         return cls(
             categories=categories,
+            tags=tags,
             date_from=date_from,
             date_to=date_to,
             is_expense=is_expense,
@@ -53,6 +60,12 @@ class TransactionFilter(BaseModel):
         conditions: list[ColumnElement[bool]] = []
         if self.categories:
             conditions.append(Transaction.category.in_(self.categories))
+        if self.tags:
+            # `&&` (any overlap), served by the GIN index on transactions.tags.
+            # Slugified so a display name in the query string still matches.
+            conditions.append(
+                Transaction.tags.overlap([slugify(tag) for tag in self.tags])
+            )
         if self.date_from:
             conditions.append(Transaction.date >= self.date_from)
         if self.date_to:

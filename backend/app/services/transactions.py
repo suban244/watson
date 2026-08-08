@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import Transaction
 from schema.transaction import TransactionCreate
+from services import tags as tag_service
 
 Conditions = Sequence[ColumnElement[bool]]
 
@@ -16,7 +17,11 @@ Conditions = Sequence[ColumnElement[bool]]
 async def create_transaction(
     session: AsyncSession, data: TransactionCreate
 ) -> Transaction:
-    transaction = Transaction(**data.model_dump())
+    payload = data.model_dump()
+    # Raises ValueError naming the valid slugs; callers surface it as-is.
+    payload["tags"] = await tag_service.resolve_slugs(session, payload["tags"])
+
+    transaction = Transaction(**payload)
     session.add(transaction)
     await session.commit()
     await session.refresh(transaction)
@@ -84,6 +89,10 @@ async def update_transaction(
     transaction = await session.get(Transaction, transaction_id)
     if transaction is None:
         return None
+
+    if "tags" in updates:
+        updates["tags"] = await tag_service.resolve_slugs(session, updates["tags"])
+
     for key, value in updates.items():
         setattr(transaction, key, value)
     await session.commit()

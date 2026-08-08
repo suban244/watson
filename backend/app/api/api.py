@@ -1,6 +1,7 @@
 import asyncio
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from .endpoints.tag import router as tag_router
 from .endpoints.transaction import router as transaction_router
 from pydantic import BaseModel
 from config import settings
@@ -30,6 +31,7 @@ def router_root():
 
 
 router.include_router(transaction_router, prefix="/transactions", tags=["transactions"])
+router.include_router(tag_router, prefix="/tags", tags=["tags"])
 
 
 @router.post(

@@ -25,5 +25,7 @@ async def query_database_function(plan: str, query: str) -> str:
 
 
 query_function_description = (
-    f"Run SQL query on transaction table {DDL_TRANSACTION_TABLE}"
+    f"Run SQL query on transaction table {DDL_TRANSACTION_TABLE}\n"
+    "`tags` is a text[] of tag slugs: match it with `'slug' = ANY(tags)` or "
+    "`tags @> ARRAY['slug']`, never with `=`."
 )

@@ -12,7 +12,7 @@ from sqlalchemy import (
     Text,
     column,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import func
@@ -62,11 +62,19 @@ class Transaction(PrimaryUUIDTimestamped):
     category: Mapped[str | None] = mapped_column(
         String(50), nullable=True, comment="Category of the transaction"
     )
+    tags: Mapped[list[str]] = mapped_column(
+        MutableList.as_mutable(ARRAY(Text)),
+        nullable=False,
+        default=list,
+        server_default="{}",
+        comment="Tag slugs; validated against tags.slug before write",
+    )
 
     __table_args__ = (
         Index("ix_transactions_date", "date"),
         Index("ix_transactions_is_expense", "is_expense"),
         Index("ix_transactions_category", "category"),
+        Index("ix_transactions_tags", "tags", postgresql_using="gin"),
         Index(
             "ix_transactions_bm25",
             indexing.BM25Field(column("id")),
@@ -76,6 +84,47 @@ class Transaction(PrimaryUUIDTimestamped):
             postgresql_with={"key_field": "id"},
         ),
     )
+
+
+class TagStatus(StrEnum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+class Tag(PrimaryUUIDTimestamped):
+    """A label applied to transactions. A "pot" is just a tag with `is_pot` set,
+    optionally carrying a spending limit — keeping both in one table means there
+    is no second registry to drift out of sync."""
+
+    __tablename__ = "tags"
+
+    slug: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        unique=True,
+        comment="Immutable identifier stored in transactions.tags",
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="When to apply this tag; rendered into the agent's instructions",
+    )
+
+    is_pot: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=TagStatus.ACTIVE
+    )
+
+    # Both only meaningful when `is_pot`; enforced in the service layer.
+    exclude_from_monthly: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    limit_amount: Mapped[float | None] = mapped_column(
+        Float, nullable=True, comment="Null means the pot tracks spend with no limit"
+    )
+
+    __table_args__ = (Index("ix_tags_status", "status"),)
 
 
 class ReminderStatus(StrEnum):

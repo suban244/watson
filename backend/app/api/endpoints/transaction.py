@@ -24,7 +24,11 @@ async def create_transaction(
     transaction: TransactionCreate,
     session: AsyncSession = Depends(get_session),
 ):
-    return await transaction_service.create_transaction(session, transaction)
+    try:
+        return await transaction_service.create_transaction(session, transaction)
+    except ValueError as exc:
+        # Unknown/archived tag slugs, or too many of them.
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/list/", response_model=list[TransactionRead])
@@ -86,9 +90,13 @@ async def update_transaction(
     transaction_update: TransactionUpdate,
     session: AsyncSession = Depends(get_session),
 ):
-    transaction = await transaction_service.update_transaction(
-        session, transaction_id, transaction_update.model_dump(exclude_none=True)
-    )
+    try:
+        transaction = await transaction_service.update_transaction(
+            session, transaction_id, transaction_update.model_dump(exclude_none=True)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return transaction

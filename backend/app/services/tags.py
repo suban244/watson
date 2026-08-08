@@ -12,7 +12,7 @@ text names the valid options to make a retry informed.
 
 import re
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Collection, Iterable, Sequence
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -182,12 +182,22 @@ async def delete_tag(session: AsyncSession, tag_id: uuid.UUID) -> bool:
     return True
 
 
-async def resolve_slugs(session: AsyncSession, slugs: Iterable[str]) -> list[str]:
+async def resolve_slugs(
+    session: AsyncSession,
+    slugs: Iterable[str],
+    *,
+    grandfathered: Collection[str] = (),
+) -> list[str]:
     """Normalise and validate slugs before they are written onto a transaction.
 
     Returns a de-duplicated list in the order given. Archived tags are refused
     alongside unknown ones: they stay valid on transactions that already carry
     them, but applying one to something new is almost always a mistake.
+
+    `grandfathered` holds slugs the target already carries, which stay legal
+    even once archived — otherwise archiving a tag would freeze every
+    transaction wearing it, since any later edit would re-validate the whole
+    list and trip over the archived entry.
     """
     seen: list[str] = []
     for raw in slugs:
@@ -206,8 +216,9 @@ async def resolve_slugs(session: AsyncSession, slugs: Iterable[str]) -> list[str
 
     active = await list_tags(session, status=TagStatus.ACTIVE)
     active_slugs = {tag.slug for tag in active}
+    allowed = active_slugs | {slugify(slug) for slug in grandfathered}
 
-    unknown = [slug for slug in seen if slug not in active_slugs]
+    unknown = [slug for slug in seen if slug not in allowed]
     if unknown:
         available = ", ".join(sorted(active_slugs)) or "none defined yet"
         raise ValueError(
@@ -218,11 +229,12 @@ async def resolve_slugs(session: AsyncSession, slugs: Iterable[str]) -> list[str
     return seen
 
 
-async def active_tag_reference(session: AsyncSession) -> str:
+async def active_tag_reference(session: AsyncSession) -> str | None:
     """Render `- slug: description` lines for the agent's instructions, mirroring
     `ExpenseCategory.reference()` so tag guidance reads the same as category
-    guidance."""
+    guidance. Returns None when no tags exist, so the caller can inject nothing
+    rather than a placeholder."""
     tags = await list_tags(session, status=TagStatus.ACTIVE)
     if not tags:
-        return "(no tags defined yet)"
+        return None
     return "\n".join(f"- {tag.slug}: {tag.description or tag.name}" for tag in tags)

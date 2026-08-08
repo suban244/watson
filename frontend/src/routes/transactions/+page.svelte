@@ -9,7 +9,7 @@
 		deleteTransaction
 	} from '$lib/api';
 	import type { Transaction, TransactionGroup } from '$lib/api';
-	import { formatDateLabel } from '$lib/utils/date';
+	import { formatDateLabel, toLocalDateKey } from '$lib/utils/date';
 	import TransactionFormModal from '$lib/components/TransactionFormModal.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
@@ -58,7 +58,11 @@
 		if (dateTo) r = r.filter((tx) => tx.date.slice(0, 10) <= dateTo);
 		if (amountMin) r = r.filter((tx) => tx.amount >= parseFloat(amountMin));
 		if (amountMax) r = r.filter((tx) => tx.amount <= parseFloat(amountMax));
-		return r;
+		// always newest transaction date first, regardless of what order the API returned
+		return r.sort((a, b) => {
+			const byDate = new Date(b.date).getTime() - new Date(a.date).getTime();
+			return byDate !== 0 ? byDate : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+		});
 	});
 
 	let totalTransactions = $derived(displayedTransactions.length);
@@ -73,7 +77,7 @@
 	let groupedTransactions: TransactionGroup[] = $derived.by(() => {
 		const groups: Record<string, Transaction[]> = {};
 		for (const transaction of displayedTransactions) {
-			const date = new Date(transaction.date).toISOString().split('T')[0];
+			const date = toLocalDateKey(transaction.date);
 			if (!groups[date]) groups[date] = [];
 			groups[date].push(transaction);
 		}

@@ -9,6 +9,7 @@ from bot.tools.query_database import (
 )
 from db.session import async_session_maker
 from schema.transaction import ExpenseCategory, IncomeCategory, TransactionCreate
+from services import tags as tag_service
 from services import transactions as transaction_service
 from utils.timezone import parse_date
 
@@ -17,10 +18,11 @@ from db.models import Transaction
 
 def format_transaction(transaction: Transaction) -> str:
     kind = "expense" if transaction.is_expense else "income"
+    tags = f" | tags: {', '.join(transaction.tags)}" if transaction.tags else ""
     return (
         f"- id={transaction.id} | {transaction.title} "
         f"| {transaction.date.date()} | {transaction.amount} NPR "
-        f"| {transaction.category or 'N/A'} | {kind}"
+        f"| {transaction.category or 'N/A'} | {kind}{tags}"
     )
 
 
@@ -88,12 +90,30 @@ Expense categories (pick the closest fit; omit if genuinely unclear, defaults to
 )
 
 
+@transactions.instructions
+async def active_tags_reference() -> str | None:
+    """Inject the current tag list, so an expense can be tagged as it is
+    recorded rather than needing a correction afterwards. Lives here rather than
+    on the tags capability because the decision happens during `add_expense`,
+    and both capabilities load independently."""
+    async with async_session_maker() as session:
+        reference = await tag_service.active_tag_reference(session)
+    if reference is None:
+        return None
+    return (
+        "Active tags (pass matching slugs as `tags` when recording an expense "
+        "that clearly belongs to one; omit when none clearly applies):\n"
+        f"{reference}"
+    )
+
+
 @transactions.tool_plain
 async def add_expense(
     title: str,
     amount: float,
     category: ExpenseCategory | None = None,
     date: str | None = None,
+    tags: list[str] | None = None,
 ) -> str:
     """Add an expense to the database.
     Args:
@@ -103,6 +123,9 @@ async def add_expense(
             unclear (defaults to misc). See the "Expense categories" reference in
             your instructions for what each one covers.
         date: The date of the expense in YYYY-MM-DD format. Omit if the expense is for today.
+        tags: Slugs of any active tags or pots this expense belongs to, from the
+            "Active tags" reference in your instructions. Omit when none clearly
+            applies; do not invent slugs.
     """
     if not category:
         category = ExpenseCategory.MISC
@@ -117,9 +140,14 @@ async def add_expense(
         title=title,
         category=category,
         is_expense=True,
+        tags=tags or [],
     )
     async with async_session_maker() as session:
-        trnsaction = await transaction_service.create_transaction(session, expense)
+        try:
+            trnsaction = await transaction_service.create_transaction(session, expense)
+        except ValueError as exc:
+            # Unknown or archived tag slug; the message names the valid ones.
+            return str(exc)
         transaction_id = trnsaction.id
     return f"Expense added: {title} on {date_obj.date()} for {amount} in category {category.value}. Trnsaction ID: {transaction_id}."
 

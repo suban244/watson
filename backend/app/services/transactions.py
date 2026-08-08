@@ -91,7 +91,11 @@ async def update_transaction(
         return None
 
     if "tags" in updates:
-        updates["tags"] = await tag_service.resolve_slugs(session, updates["tags"])
+        # Slugs already on the row stay legal even if since archived, so
+        # archiving a tag never freezes the transactions wearing it.
+        updates["tags"] = await tag_service.resolve_slugs(
+            session, updates["tags"], grandfathered=transaction.tags
+        )
 
     for key, value in updates.items():
         setattr(transaction, key, value)

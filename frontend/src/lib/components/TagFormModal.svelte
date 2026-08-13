@@ -16,7 +16,9 @@
 	let name = $state('');
 	let description = $state('');
 	let isPot = $state(false);
-	let limitAmount = $state('');
+	// `bind:value` on <input type="number"> yields a number (or null when empty),
+	// never a string — so this must not be treated as one.
+	let limitAmount = $state<number | null>(null);
 	let excludeFromMonthly = $state(false);
 	let saving = $state(false);
 	let error = $state<string | null>(null);
@@ -39,35 +41,37 @@
 		name = tag?.name ?? '';
 		description = tag?.description ?? '';
 		isPot = tag?.is_pot ?? false;
-		limitAmount = tag?.limit_amount != null ? String(tag.limit_amount) : '';
+		limitAmount = tag?.limit_amount ?? null;
 		excludeFromMonthly = tag?.exclude_from_monthly ?? false;
 		error = null;
 	});
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
-
-		if (!name.trim()) {
-			error = 'Name is required';
-			return;
-		}
-		if (!slugPreview) {
-			error = 'Name must contain at least one letter or number';
-			return;
-		}
-
-		let parsedLimit: number | null = null;
-		if (isPot && limitAmount.trim()) {
-			parsedLimit = parseFloat(limitAmount);
-			if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
-				error = 'Enter a valid limit, or leave it blank for an untracked pot';
-				return;
-			}
-		}
-
 		error = null;
 		saving = true;
+
+		// Validation lives inside the try so an unexpected throw surfaces as a message
+		// instead of killing the handler silently and leaving the button looking dead.
 		try {
+			if (!name.trim()) {
+				error = 'Name is required';
+				return;
+			}
+			if (!slugPreview) {
+				error = 'Name must contain at least one letter or number';
+				return;
+			}
+
+			let parsedLimit: number | null = null;
+			if (isPot && limitAmount !== null) {
+				parsedLimit = Number(limitAmount);
+				if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
+					error = 'Enter a valid limit, or leave it blank for an untracked pot';
+					return;
+				}
+			}
+
 			// The backend rejects pot-only fields on a plain tag, so clear them when
 			// `is_pot` is off rather than sending stale values.
 			const payload = {

@@ -2,12 +2,27 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { page } from '$app/state';
+	import Icon from '$lib/components/Icon.svelte';
+	import type { IconName } from '$lib/components/Icon.svelte';
 
 	let { children } = $props();
 
 	function isActive(href: string) {
 		return page.url.pathname === href;
 	}
+
+	const sections: { heading: string; items: { href: string; label: string; icon: IconName }[] }[] = [
+		{ heading: 'Overview', items: [{ href: '/', label: 'Dashboard', icon: 'dashboard' }] },
+		{
+			heading: 'Money',
+			items: [
+				{ href: '/transactions', label: 'Transactions', icon: 'transactions' },
+				{ href: '/tags', label: 'Tags', icon: 'tag' },
+				{ href: '/budget', label: 'Budget', icon: 'budget' }
+			]
+		},
+		{ heading: 'Insights', items: [{ href: '/analytics', label: 'Analytics', icon: 'analytics' }] }
+	];
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -27,43 +42,23 @@
 
 		<!-- Nav items -->
 		<div class="flex-1 overflow-y-auto py-2">
-			<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-ink-3 uppercase tracking-widest font-mono">Overview</p>
+			{#each sections as section (section.heading)}
+				<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-ink-3 uppercase tracking-widest font-mono">
+					{section.heading}
+				</p>
 
-			<a href="/"
-				class="flex items-center gap-[10px] px-[14px] py-[9px] mx-2 rounded-lg text-sm font-medium no-underline transition-colors
-					{isActive('/') ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-2 hover:bg-cream-2 hover:text-ink'}">
-				<div class="w-7 h-7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0 transition-colors
-					{isActive('/') ? 'bg-accent text-white' : 'bg-cream-2'}">⊞</div>
-				Dashboard
-			</a>
-
-			<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-ink-3 uppercase tracking-widest font-mono">Money</p>
-
-			<a href="/transactions"
-				class="flex items-center gap-[10px] px-[14px] py-[9px] mx-2 rounded-lg text-sm font-medium no-underline transition-colors
-					{isActive('/transactions') ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-2 hover:bg-cream-2 hover:text-ink'}">
-				<div class="w-7 h-7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0 transition-colors
-					{isActive('/transactions') ? 'bg-accent text-white' : 'bg-cream-2'}">⇅</div>
-				Transactions
-			</a>
-
-			<a href="/budget"
-				class="flex items-center gap-[10px] px-[14px] py-[9px] mx-2 rounded-lg text-sm font-medium no-underline transition-colors
-					{isActive('/budget') ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-2 hover:bg-cream-2 hover:text-ink'}">
-				<div class="w-7 h-7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0 transition-colors
-					{isActive('/budget') ? 'bg-accent text-white' : 'bg-cream-2'}">◧</div>
-				Budget
-			</a>
-
-			<p class="px-[14px] pt-4 pb-1 text-[10px] font-semibold text-ink-3 uppercase tracking-widest font-mono">Insights</p>
-
-			<a href="/analytics"
-				class="flex items-center gap-[10px] px-[14px] py-[9px] mx-2 rounded-lg text-sm font-medium no-underline transition-colors
-					{isActive('/analytics') ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-2 hover:bg-cream-2 hover:text-ink'}">
-				<div class="w-7 h-7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0 transition-colors
-					{isActive('/analytics') ? 'bg-accent text-white' : 'bg-cream-2'}">◟</div>
-				Analytics
-			</a>
+				{#each section.items as item (item.href)}
+					<a href={item.href}
+						class="flex items-center gap-[10px] px-[14px] py-[9px] mx-2 rounded-lg text-sm font-medium no-underline transition-colors
+							{isActive(item.href) ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-2 hover:bg-cream-2 hover:text-ink'}">
+						<div class="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 transition-colors
+							{isActive(item.href) ? 'bg-accent text-white' : 'bg-cream-2 text-ink-2'}">
+							<Icon name={item.icon} size={18} />
+						</div>
+						{item.label}
+					</a>
+				{/each}
+			{/each}
 		</div>
 
 		<!-- Footer -->

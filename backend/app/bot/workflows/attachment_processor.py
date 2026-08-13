@@ -48,7 +48,8 @@ document_classifier = Agent(
     output_type=FinancialDocument | CannotClassify,
     system_prompt=(
         'Classify the document in the image url as "FinancialDocument" '
-        "if it is a financial document like a receipt, invoice, bill etc."
+        "if it is a financial document like a receipt, invoice or bill etc."
+        "It may also contain transaction /payment details, etc."
     ),
 )
 

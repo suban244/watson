@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import IconButton from './IconButton.svelte';
 
 	let {
 		open = $bindable(false),
@@ -40,14 +41,7 @@
 		>
 			<div class="mb-[22px] flex items-center justify-between">
 				<h2 class="font-serif text-[17px] font-semibold text-ink">{title}</h2>
-				<button
-					type="button"
-					onclick={close}
-					class="cursor-pointer border-none bg-transparent text-[20px] leading-none text-ink-3 transition-colors hover:text-ink"
-					aria-label="Close"
-				>
-					✕
-				</button>
+				<IconButton icon="close" label="Close" onclick={close} size={18} />
 			</div>
 			{@render children()}
 		</div>

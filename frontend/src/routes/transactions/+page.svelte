@@ -5,21 +5,28 @@
 		getCategories,
 		getCategoryOptions,
 		listTransactions,
+		listTags,
 		searchTransactions,
 		deleteTransaction
 	} from '$lib/api';
-	import type { Transaction, TransactionGroup } from '$lib/api';
+	import type { Tag, Transaction, TransactionGroup } from '$lib/api';
 	import { formatDateLabel, toLocalDateKey } from '$lib/utils/date';
 	import TransactionFormModal from '$lib/components/TransactionFormModal.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import Icon from '$lib/components/Icon.svelte';
+	import IconButton from '$lib/components/IconButton.svelte';
 
 	// --- data ---
 	let transactions = $state<Transaction[]>([]);
 	let categories = $state<string[]>([]);
 	let expenseCategories = $state<string[]>([]);
 	let incomeCategories = $state<string[]>([]);
+	let tags = $state<Tag[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+
+	/** Slug → display name, for rendering the slugs stored on transactions. */
+	let tagNames = $derived(new Map(tags.map((t) => [t.slug, t.name])));
 
 	// --- filters ---
 	let searchQuery = $state('');
@@ -27,6 +34,9 @@
 
 	let selectedCategories = $state(new Set<string>());
 	let categoryOpen = $state(false);
+
+	let selectedTags = $state(new Set<string>());
+	let tagOpen = $state(false);
 
 	let dateFrom = $state('');
 	let dateTo = $state('');
@@ -54,6 +64,8 @@
 		let r = selectedCategories.size > 0
 			? base.filter((tx) => tx.category !== null && selectedCategories.has(tx.category))
 			: [...base];
+		// "any of", matching the backend's `&&` overlap semantics on ?tags=
+		if (selectedTags.size > 0) r = r.filter((tx) => tx.tags.some((slug) => selectedTags.has(slug)));
 		if (dateFrom) r = r.filter((tx) => tx.date.slice(0, 10) >= dateFrom);
 		if (dateTo) r = r.filter((tx) => tx.date.slice(0, 10) <= dateTo);
 		if (amountMin) r = r.filter((tx) => tx.amount >= parseFloat(amountMin));
@@ -71,7 +83,12 @@
 	);
 
 	let hasActiveFilters = $derived(
-		selectedCategories.size > 0 || !!dateFrom || !!dateTo || !!amountMin || !!amountMax
+		selectedCategories.size > 0 ||
+			selectedTags.size > 0 ||
+			!!dateFrom ||
+			!!dateTo ||
+			!!amountMin ||
+			!!amountMax
 	);
 
 	let groupedTransactions: TransactionGroup[] = $derived.by(() => {
@@ -144,6 +161,7 @@
 
 	function clearAll() {
 		selectedCategories = new Set();
+		selectedTags = new Set();
 		dateFrom = '';
 		dateTo = '';
 		amountMin = '';
@@ -196,10 +214,11 @@
 	onMount(async () => {
 		try {
 			let categoryOptions;
-			[transactions, categories, categoryOptions] = await Promise.all([
+			[transactions, categories, categoryOptions, tags] = await Promise.all([
 				listTransactions(1, 500),
 				getCategories(),
-				getCategoryOptions()
+				getCategoryOptions(),
+				listTags({ status: 'active' })
 			]);
 			expenseCategories = categoryOptions.expense;
 			incomeCategories = categoryOptions.income;
@@ -220,15 +239,17 @@
 		</div>
 		<div class="flex gap-2">
 			<button
-				class="cursor-pointer rounded-lg border border-line bg-card px-[18px] py-[9px] text-[13px] font-semibold text-ink-2 transition-all hover:-translate-y-px hover:opacity-90"
+				class="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-card px-[18px] py-[9px] text-[13px] font-semibold text-ink-2 transition-all hover:-translate-y-px hover:opacity-90"
 			>
-				↓ Import
+				<Icon name="import" />
+				Import
 			</button>
 			<button
 				onclick={openAddModal}
-				class="cursor-pointer rounded-lg bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-white transition-all hover:-translate-y-px hover:opacity-90"
+				class="flex cursor-pointer items-center gap-2 rounded-lg bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-white transition-all hover:-translate-y-px hover:opacity-90"
 			>
-				+ Add
+				<Icon name="plus" />
+				Add transaction
 			</button>
 		</div>
 	</div>
@@ -245,7 +266,7 @@
 				<div
 					class="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-line bg-cream-2 px-[14px] py-2"
 				>
-					<span class="text-[14px] opacity-40">🔍</span>
+					<Icon name="search" class="text-ink-2" />
 					<input
 						type="text"
 						placeholder="Search description…"
@@ -256,35 +277,52 @@
 
 				<!-- Category pill -->
 				<button
-					onclick={() => { categoryOpen = !categoryOpen; dateRangeOpen = false; amountOpen = false; }}
-					class="cursor-pointer rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
+					onclick={() => { categoryOpen = !categoryOpen; tagOpen = false; dateRangeOpen = false; amountOpen = false; }}
+					class="flex cursor-pointer items-center gap-[6px] rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
 						{categoryOpen || selectedCategories.size > 0
 						? 'border-accent bg-accent-soft text-accent'
 						: 'border-line bg-card text-ink-2 hover:border-accent hover:text-accent'}"
 				>
-					Category ▾
+					Category
+					<Icon name="chevronDown" size={14} class="transition-transform {categoryOpen ? 'rotate-180' : ''}" />
 				</button>
+
+				<!-- Tags pill -->
+				{#if tags.length > 0}
+					<button
+						onclick={() => { tagOpen = !tagOpen; categoryOpen = false; dateRangeOpen = false; amountOpen = false; }}
+						class="flex cursor-pointer items-center gap-[6px] rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
+							{tagOpen || selectedTags.size > 0
+							? 'border-accent bg-accent-soft text-accent'
+							: 'border-line bg-card text-ink-2 hover:border-accent hover:text-accent'}"
+					>
+						Tags
+						<Icon name="chevronDown" size={14} class="transition-transform {tagOpen ? 'rotate-180' : ''}" />
+					</button>
+				{/if}
 
 				<!-- Date range pill -->
 				<button
-					onclick={() => { dateRangeOpen = !dateRangeOpen; categoryOpen = false; }}
-					class="cursor-pointer rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
+					onclick={() => { dateRangeOpen = !dateRangeOpen; categoryOpen = false; tagOpen = false; amountOpen = false; }}
+					class="flex cursor-pointer items-center gap-[6px] rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
 						{dateRangeOpen || dateFrom || dateTo
 						? 'border-accent bg-accent-soft text-accent'
 						: 'border-line bg-card text-ink-2 hover:border-accent hover:text-accent'}"
 				>
-					Date range ▾
+					Date range
+					<Icon name="chevronDown" size={14} class="transition-transform {dateRangeOpen ? 'rotate-180' : ''}" />
 				</button>
 
 				<!-- Amount pill -->
 				<button
-					onclick={() => { amountOpen = !amountOpen; categoryOpen = false; dateRangeOpen = false; }}
-					class="cursor-pointer rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
+					onclick={() => { amountOpen = !amountOpen; categoryOpen = false; tagOpen = false; dateRangeOpen = false; }}
+					class="flex cursor-pointer items-center gap-[6px] rounded-lg border px-[14px] py-2 text-[12px] font-medium transition-colors
 						{amountOpen || amountMin || amountMax
 						? 'border-accent bg-accent-soft text-accent'
 						: 'border-line bg-card text-ink-2 hover:border-accent hover:text-accent'}"
 				>
-					Amount ▾
+					Amount
+					<Icon name="chevronDown" size={14} class="transition-transform {amountOpen ? 'rotate-180' : ''}" />
 				</button>
 			</div>
 			{#if categoryOpen}
@@ -315,6 +353,39 @@
 								: 'border-line bg-card text-ink-2 hover:border-accent'}"
 						>
 							{cat}
+						</button>
+					{/each}
+				</div>
+			{/if}
+
+			{#if tagOpen}
+				<div
+					class="flex flex-wrap gap-2 border-t border-line px-4 py-3"
+					transition:slide={{ duration: 150 }}
+				>
+					<button
+						onclick={() => (selectedTags = new Set())}
+						class="cursor-pointer rounded-lg border px-3 py-[6px] font-mono text-[11px] font-medium transition-colors
+							{selectedTags.size === 0
+							? 'border-accent bg-accent-soft text-accent'
+							: 'border-line bg-card text-ink-2 hover:border-accent'}"
+					>
+						All
+					</button>
+					{#each tags as tag (tag.id)}
+						<button
+							onclick={() => {
+								const next = new Set(selectedTags);
+								if (next.has(tag.slug)) next.delete(tag.slug);
+								else next.add(tag.slug);
+								selectedTags = next;
+							}}
+							class="cursor-pointer rounded-lg border px-3 py-[6px] font-mono text-[11px] font-medium transition-colors
+								{selectedTags.has(tag.slug)
+								? 'border-accent bg-accent-soft text-accent'
+								: 'border-line bg-card text-ink-2 hover:border-accent'}"
+						>
+							{tag.is_pot ? '◉ ' : ''}{tag.name}
 						</button>
 					{/each}
 				</div>
@@ -419,8 +490,23 @@
 									next.delete(cat);
 									selectedCategories = next;
 								}}
-								class="cursor-pointer border-none bg-transparent text-[11px] leading-none text-white/70 hover:text-white"
-							>✕</button>
+								aria-label="Remove filter"
+								class="flex cursor-pointer items-center border-none bg-transparent leading-none text-white/70 hover:text-white"
+							><Icon name="close" size={12} /></button>
+						</span>
+					{/each}
+					{#each selectedTags as slug (slug)}
+						<span class="inline-flex items-center gap-[5px] rounded-full bg-accent py-[3px] pl-3 pr-[6px] font-mono text-[10px] text-white">
+							{tagNames.get(slug) ?? slug}
+							<button
+								onclick={() => {
+									const next = new Set(selectedTags);
+									next.delete(slug);
+									selectedTags = next;
+								}}
+								aria-label="Remove filter"
+								class="flex cursor-pointer items-center border-none bg-transparent leading-none text-white/70 hover:text-white"
+							><Icon name="close" size={12} /></button>
 						</span>
 					{/each}
 					{#if amountMin || amountMax}
@@ -428,8 +514,9 @@
 							{formatAmountChip(amountMin, amountMax)}
 							<button
 								onclick={() => { amountMin = ''; amountMax = ''; }}
-								class="cursor-pointer border-none bg-transparent text-[11px] leading-none text-white/70 hover:text-white"
-							>✕</button>
+								aria-label="Remove filter"
+								class="flex cursor-pointer items-center border-none bg-transparent leading-none text-white/70 hover:text-white"
+							><Icon name="close" size={12} /></button>
 						</span>
 					{/if}
 					{#if dateFrom || dateTo}
@@ -437,8 +524,9 @@
 							{formatDateChip(dateFrom, dateTo)}
 							<button
 								onclick={() => { dateFrom = ''; dateTo = ''; }}
-								class="cursor-pointer border-none bg-transparent text-[11px] leading-none text-white/70 hover:text-white"
-							>✕</button>
+								aria-label="Remove filter"
+								class="flex cursor-pointer items-center border-none bg-transparent leading-none text-white/70 hover:text-white"
+							><Icon name="close" size={12} /></button>
 						</span>
 					{/if}
 					<button
@@ -483,18 +571,19 @@
 						{#each group.transactions as tx}
 							<div class="group cursor-pointer transition-colors hover:bg-cream-2">
 								<div
-									class="grid grid-cols-[28px_1fr_auto_auto_44px] items-center gap-2 px-5 py-3"
+									class="grid grid-cols-[28px_1fr_auto_auto_auto_72px] items-center gap-2 px-5 py-3"
 									onclick={() => toggleRow(tx.id)}
 									role="button"
 									tabindex="0"
 									onkeydown={(e) => e.key === 'Enter' && toggleRow(tx.id)}
 								>
 									<div
-										class="text-center text-[13px] font-semibold {tx.is_expense
+										class="flex items-center justify-center {tx.is_expense
 											? 'text-negative'
 											: 'text-positive'}"
+										title={tx.is_expense ? 'Expense' : 'Income'}
 									>
-										{tx.is_expense ? '↓' : '↑'}
+										<Icon name={tx.is_expense ? 'expense' : 'income'} size={16} strokeWidth={2.5} />
 									</div>
 									<div class="text-[14px] font-medium text-ink">{tx.title}</div>
 									<span
@@ -504,6 +593,19 @@
 									>
 										{tx.category ?? '—'}
 									</span>
+									<!-- First two tags inline; the rest collapse into +N and show on expand. -->
+									<div class="flex items-center gap-1">
+										{#each tx.tags.slice(0, 2) as slug (slug)}
+											<span
+												class="inline-block rounded-full border border-accent/25 bg-accent-soft px-[8px] py-[2px] font-mono text-[10px] font-medium text-accent"
+											>
+												{tagNames.get(slug) ?? slug}
+											</span>
+										{/each}
+										{#if tx.tags.length > 2}
+											<span class="font-mono text-[10px] text-ink-3">+{tx.tags.length - 2}</span>
+										{/if}
+									</div>
 									<span
 										class="text-right font-mono text-[13px] font-medium {tx.is_expense
 											? 'text-negative'
@@ -511,25 +613,21 @@
 									>
 										{tx.is_expense ? '-' : '+'}Rs. {tx.amount.toFixed(2)}
 									</span>
-									<div
-										class="flex items-center justify-end gap-2 text-[12px] opacity-0 transition-opacity group-hover:opacity-100"
-									>
-										<button
-											type="button"
+									<!-- Always visible: these were `opacity-0` until row hover, which made
+										 them impossible to discover. IconButton carries the hover feedback. -->
+									<div class="flex items-center justify-end">
+										<IconButton
+											icon="edit"
+											label="Edit transaction"
+											tone="accent"
 											onclick={(e) => { e.stopPropagation(); openEditModal(tx); }}
-											class="cursor-pointer text-ink-3 hover:text-accent"
-											aria-label="Edit transaction"
-										>
-											✏
-										</button>
-										<button
-											type="button"
+										/>
+										<IconButton
+											icon="trash"
+											label="Delete transaction"
+											tone="negative"
 											onclick={(e) => { e.stopPropagation(); openDeleteConfirm(tx); }}
-											class="cursor-pointer text-ink-3 hover:text-negative"
-											aria-label="Delete transaction"
-										>
-											✕
-										</button>
+										/>
 									</div>
 								</div>
 								{#if openIds.has(tx.id)}
@@ -546,6 +644,23 @@
 												{tx.description ?? 'No description'}
 											</span>
 										</div>
+										{#if tx.tags.length > 0}
+											<div class="mt-2 flex items-start gap-3">
+												<span
+													class="w-20 shrink-0 pt-[2px] font-mono text-[9px] tracking-widest text-ink-3 uppercase"
+													>Tags</span
+												>
+												<div class="flex flex-wrap gap-1">
+													{#each tx.tags as slug (slug)}
+														<span
+															class="inline-block rounded-full border border-accent/25 bg-accent-soft px-[8px] py-[2px] font-mono text-[10px] font-medium text-accent"
+														>
+															{tagNames.get(slug) ?? slug}
+														</span>
+													{/each}
+												</div>
+											</div>
+										{/if}
 									</div>
 								{/if}
 							</div>
@@ -562,6 +677,7 @@
 	transaction={editingTransaction}
 	expenseCategories={expenseCategories}
 	incomeCategories={incomeCategories}
+	tags={tags}
 	onsaved={upsertTransaction}
 />
 

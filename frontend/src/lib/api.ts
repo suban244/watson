@@ -121,6 +121,30 @@ export interface TransactionGroup {
 	transactions: Transaction[];
 }
 
+/** A pot plus its all-time spend. `limit_amount` may be null — the pot then
+ * tracks spend without a target. */
+export interface PotSummary extends Tag {
+	spent: number;
+	transaction_count: number;
+}
+
+export interface MonthlySummary {
+	month_start: string;
+	gross_spend: number;
+	/** Spend attributed to pots flagged `exclude_from_monthly`. */
+	excluded_spend: number;
+	/** `gross_spend` minus `excluded_spend` — the month's "normal" spending. */
+	net_spend: number;
+}
+
+export interface BudgetOverview {
+	pots: PotSummary[];
+	month: MonthlySummary;
+}
+
+export const getBudgetOverview = (): Promise<BudgetOverview> =>
+	request('GET', '/budget/overview/');
+
 export const listTags = (opts: { status?: TagStatus; is_pot?: boolean } = {}): Promise<Tag[]> => {
 	const params = new URLSearchParams();
 	if (opts.status) params.set('status', opts.status);

@@ -128,22 +128,57 @@ export interface PotSummary extends Tag {
 	transaction_count: number;
 }
 
-export interface MonthlySummary {
+export interface EnvelopeStatus {
+	category: string;
+	limit: number;
+	spent: number;
+	/** The part of `spent` carried by pots flagged `exclude_from_monthly`. */
+	excluded_spent: number;
+}
+
+export interface MonthlyBudgetStatus {
 	month_start: string;
+	/** Exclusive. */
+	month_end: string;
+	source: 'standard' | 'override';
+
 	gross_spend: number;
-	/** Spend attributed to pots flagged `exclude_from_monthly`. */
 	excluded_spend: number;
-	/** `gross_spend` minus `excluded_spend` — the month's "normal" spending. */
 	net_spend: number;
+
+	uncategorized_spend: number;
+	uncategorized_excluded_spend: number;
+
+	overall_limit: number | null;
+	envelopes: EnvelopeStatus[];
 }
 
 export interface BudgetOverview {
 	pots: PotSummary[];
-	month: MonthlySummary;
+	month: MonthlyBudgetStatus;
 }
 
-export const getBudgetOverview = (): Promise<BudgetOverview> =>
-	request('GET', '/budget/overview/');
+export interface MonthlyBudgetUpdate {
+	limits?: Record<string, number>;
+	overall_limit?: number | null;
+}
+
+const monthQuery = (month?: string) => (month ? `?month=${month}` : '');
+
+export const getBudgetOverview = (month?: string): Promise<BudgetOverview> =>
+	request('GET', `/budget/overview/${monthQuery(month)}`);
+
+export const getMonthlyBudget = (month?: string): Promise<MonthlyBudgetStatus> =>
+	request('GET', `/budget/monthly/${monthQuery(month)}`);
+
+export const updateMonthlyBudget = (
+	data: MonthlyBudgetUpdate,
+	month?: string
+): Promise<MonthlyBudgetStatus> => request('PATCH', `/budget/monthly/${monthQuery(month)}`, data);
+
+/** Drop the month's override so it follows the standard budget again. */
+export const clearMonthlyBudget = (month?: string): Promise<MonthlyBudgetStatus> =>
+	request('DELETE', `/budget/monthly/${monthQuery(month)}`);
 
 export const listTags = (opts: { status?: TagStatus; is_pot?: boolean } = {}): Promise<Tag[]> => {
 	const params = new URLSearchParams();

@@ -1,10 +1,11 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    Date,
     DateTime,
     Float,
     Index,
@@ -92,9 +93,8 @@ class TagStatus(StrEnum):
 
 
 class Tag(PrimaryUUIDTimestamped):
-    """A label applied to transactions. A "pot" is just a tag with `is_pot` set,
-    optionally carrying a spending limit — keeping both in one table means there
-    is no second registry to drift out of sync."""
+    """A label applied to transactions. A "pot" is a tag with `is_pot` set,
+    optionally carrying a spending limit."""
 
     __tablename__ = "tags"
 
@@ -125,6 +125,27 @@ class Tag(PrimaryUUIDTimestamped):
     )
 
     __table_args__ = (Index("ix_tags_status", "status"),)
+
+
+class MonthlyBudget(PrimaryTimestamped):
+    """An override of the standard budget, for one month. Most months have no
+    row and follow `DEFAULT_MONTHLY_LIMITS` in `schema.budget`."""
+
+    __tablename__ = "monthly_budgets"
+
+    month: Mapped[date] = mapped_column(
+        Date, primary_key=True, comment="Always the 1st of the month, NPT"
+    )
+    limits: Mapped[dict] = mapped_column(
+        MutableDict.as_mutable(JSONB),
+        nullable=False,
+        default=dict,
+        server_default="{}",
+        comment="Per-category limits keyed by ExpenseCategory value",
+    )
+    # Its own column, not a reserved key inside `limits` that could collide
+    # with a category name.
+    overall_limit: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
 class ReminderStatus(StrEnum):

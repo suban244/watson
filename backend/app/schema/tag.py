@@ -1,4 +1,3 @@
-from datetime import date
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -25,28 +24,6 @@ class TagRead(TagBase):
     status: str
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class PotSummary(TagRead):
-    """A pot plus what it has spent, all-time. `limit_amount` is inherited and
-    may be null, meaning the pot tracks spend without a target."""
-
-    spent: float
-    transaction_count: int
-
-
-class MonthlySummary(BaseModel):
-    month_start: date
-    gross_spend: float
-    #: Spend attributed to pots flagged `exclude_from_monthly`.
-    excluded_spend: float
-    #: `gross_spend` minus `excluded_spend` — the month's "normal" spending.
-    net_spend: float
-
-
-class BudgetOverview(BaseModel):
-    pots: list[PotSummary]
-    month: MonthlySummary
 
 
 class TagUpdate(BaseModel):

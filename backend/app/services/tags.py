@@ -1,13 +1,11 @@
 """Shared tag queries used by both the API endpoints and the bot agent.
 
-A "pot" is just a tag with `is_pot` set — keeping both in one table means there
-is no second registry to drift out of sync. The two fields a pot unlocks
-(`limit_amount`, `exclude_from_monthly`) are meaningless on a plain tag, which
-is enforced here rather than by a DB constraint.
+The pot-only fields (`limit_amount`, `exclude_from_monthly`) are enforced here
+rather than by a DB constraint.
 
-Validation failures raise `ValueError` with a message meant to be shown as-is:
-the API turns it into a 400 and the agent returns it as tool output, so error
-text names the valid options to make a retry informed.
+Validation failures raise `ValueError` with a message meant to be shown as-is —
+the API turns it into a 400, the agent returns it as tool output — so the text
+names the valid options.
 """
 
 import re
@@ -20,8 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.models import Tag, TagStatus, Transaction
 from schema.tag import TagCreate
 
-# Unbounded tag arrays wreck the transaction row UI; this is a sanity cap, not
-# a domain rule.
 MAX_TAGS_PER_TRANSACTION = 5
 
 SLUG_MAX_LENGTH = 50
@@ -30,8 +26,7 @@ _NON_SLUG_CHARS = re.compile(r"[^a-z0-9]+")
 
 
 def slugify(value: str) -> str:
-    """Fold a display name down to the immutable identifier stored on
-    transactions: `"Fifa Final 2026"` -> `"fifa-final-2026"`."""
+    """`"Fifa Final 2026"` -> `"fifa-final-2026"`."""
     return _NON_SLUG_CHARS.sub("-", value.strip().lower()).strip("-")[:SLUG_MAX_LENGTH]
 
 
@@ -188,16 +183,12 @@ async def resolve_slugs(
     *,
     grandfathered: Collection[str] = (),
 ) -> list[str]:
-    """Normalise and validate slugs before they are written onto a transaction.
+    """Normalise and validate slugs before writing them onto a transaction.
 
-    Returns a de-duplicated list in the order given. Archived tags are refused
-    alongside unknown ones: they stay valid on transactions that already carry
-    them, but applying one to something new is almost always a mistake.
-
-    `grandfathered` holds slugs the target already carries, which stay legal
-    even once archived — otherwise archiving a tag would freeze every
-    transaction wearing it, since any later edit would re-validate the whole
-    list and trip over the archived entry.
+    Archived tags are refused alongside unknown ones, except those in
+    `grandfathered` — slugs the row already carries. Without that, archiving a
+    tag would freeze every transaction wearing it, since any later edit
+    re-validates the whole list.
     """
     seen: list[str] = []
     for raw in slugs:

@@ -114,71 +114,67 @@
 	}
 </script>
 
-<Modal bind:open title="Edit budget" width="max-w-[520px]">
-	<form onsubmit={handleSubmit} class="flex flex-col gap-[14px]">
-		<div>
-			<label
-				class="mb-[5px] block font-mono text-[9px] tracking-widest text-ink-3 uppercase"
-				for="budget-overall"
-			>
+<Modal bind:open title="Edit budget" width="max-w-[560px]">
+	<form onsubmit={handleSubmit} class="flex flex-col gap-3">
+		<!-- Overall cap reads as one more row rather than a headline field, so it
+			 sits at the same weight as the envelopes it caps. -->
+		<div class="flex items-center gap-2 rounded-lg border border-line bg-cream px-3 py-[6px]">
+			<label class="flex-1 text-[13px] font-medium text-ink" for="budget-overall">
 				Overall cap
+				<span class="font-mono text-[10px] font-normal text-ink-3">· whole month</span>
 			</label>
-			<div
-				class="flex items-center gap-2 rounded-lg border border-line bg-cream px-[14px] py-[6px]"
-			>
-				<span class="font-mono text-[18px] font-medium text-ink-3">Rs.</span>
-				<input
-					id="budget-overall"
-					type="number"
-					min="0"
-					step="1"
-					bind:value={overallLimit}
-					placeholder="no cap"
-					class="w-full bg-transparent font-mono text-[18px] font-medium text-ink outline-none"
-				/>
-			</div>
-			<p class="mt-[5px] font-mono text-[10px] text-ink-3">
-				The month's total ceiling. Independent of the envelopes below.
-			</p>
+			<span class="font-mono text-[11px] text-ink-3">Rs.</span>
+			<input
+				id="budget-overall"
+				type="number"
+				min="0"
+				step="1"
+				bind:value={overallLimit}
+				placeholder="none"
+				class="w-[76px] rounded border border-line bg-card px-2 py-[3px] text-right font-mono text-[12px] text-ink outline-none focus:border-accent"
+			/>
 		</div>
 
 		<div>
-			<div class="mb-[5px] flex items-baseline justify-between">
+			<div class="mb-[6px] flex items-baseline justify-between">
 				<span class="font-mono text-[9px] tracking-widest text-ink-3 uppercase">Envelopes</span>
 				<span class="font-mono text-[10px] text-ink-3">
 					allocated <span class="text-ink-2">Rs. {money(total)}</span>
 				</span>
 			</div>
 
-			<div class="overflow-hidden rounded-lg border border-line">
-				{#each rows as category, i (category)}
+			<!-- Two columns: the list is a dozen rows and a single column pushed the
+				 footer off the fold on shorter screens. -->
+			<div class="grid grid-cols-2 gap-x-2 gap-y-px rounded-lg border border-line p-2">
+				{#each rows as category (category)}
 					{@const spent = spentByCategory.get(category) ?? 0}
-					<div
-						class="flex items-center gap-3 px-[14px] py-[7px] {i > 0 ? 'border-t border-line' : ''}"
-					>
-						<label class="flex-1 text-[13px] text-ink-2" for="budget-{category}">
+					<div class="flex items-center gap-2 rounded px-1 py-[2px] hover:bg-cream-2">
+						<label
+							class="min-w-0 flex-1 truncate text-[12px] text-ink-2"
+							for="budget-{category}"
+							title={labelize(category)}
+						>
 							{labelize(category)}
-							{#if spent > 0}
-								<span class="font-mono text-[10px] text-ink-3">· Rs. {money(spent)} spent</span>
-							{/if}
 						</label>
-						<div class="flex items-center gap-[6px]">
-							<span class="font-mono text-[11px] text-ink-3">Rs.</span>
-							<input
-								id="budget-{category}"
-								type="number"
-								min="0"
-								step="1"
-								bind:value={limits[category]}
-								placeholder="—"
-								class="w-[110px] rounded-lg border border-line bg-cream px-3 py-[5px] text-right font-mono text-[13px] text-ink outline-none focus:border-accent"
-							/>
-						</div>
+						{#if spent > 0}
+							<span class="font-mono text-[10px] text-ink-3" title="spent so far">
+								{money(spent)}
+							</span>
+						{/if}
+						<input
+							id="budget-{category}"
+							type="number"
+							min="0"
+							step="1"
+							bind:value={limits[category]}
+							placeholder="—"
+							class="w-[76px] shrink-0 rounded border border-line bg-cream px-2 py-[3px] text-right font-mono text-[12px] text-ink outline-none focus:border-accent"
+						/>
 					</div>
 				{/each}
 			</div>
-			<p class="mt-[5px] font-mono text-[10px] text-ink-3">
-				Leave blank to drop the envelope. Applies to this month only.
+			<p class="mt-[6px] font-mono text-[10px] text-ink-3">
+				Blank drops the envelope · grey figures are spent so far · this month only
 			</p>
 		</div>
 
@@ -186,7 +182,7 @@
 			<p class="font-mono text-[11px] text-negative">{error}</p>
 		{/if}
 
-		<div class="mt-1 flex items-center justify-between gap-[10px]">
+		<div class="flex items-center justify-between gap-[10px]">
 			{#if confirmReset}
 				<button
 					type="button"
@@ -211,14 +207,14 @@
 				<button
 					type="button"
 					onclick={() => (open = false)}
-					class="cursor-pointer rounded-lg border border-line bg-card px-[18px] py-[9px] text-[13px] font-semibold text-ink-2 transition-opacity hover:opacity-90"
+					class="cursor-pointer rounded-lg border border-line bg-card px-4 py-[7px] text-[12px] font-semibold text-ink-2 transition-opacity hover:opacity-90"
 				>
 					Cancel
 				</button>
 				<button
 					type="submit"
 					disabled={saving}
-					class="cursor-pointer rounded-lg bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+					class="cursor-pointer rounded-lg bg-accent px-4 py-[7px] text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
 				>
 					{saving ? 'Saving…' : 'Save changes'}
 				</button>

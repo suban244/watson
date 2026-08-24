@@ -33,11 +33,7 @@ class ExpenseCategory(StrEnum):
     SNACKS = "snacks", "Food and drink bought for snacking (chips, icecream, etc.)."
     DINING_OUT = "dining_out", "Meals, snacks or coffee bought and eaten outside home."
     TRANSPORT = "transport", "Day-to-day rides, fuel and fares for getting around."
-    TRAVEL = "travel", "Multi-day trips and vacations (fares, lodging, etc.)."
-    GOING_OUT = (
-        "going_out",
-        "Casual social hangouts with friends (drinks, dinners) — defined by the company.",
-    )
+    LONG_TRAVEL = "long_travel", "Multi-day trips and vacations (fares, lodging, etc.)."
     EXPERIENCES = (
         "experiences",
         "Paid activities, events and hobbies defined by the activity itself (concerts, tickets, climbing, workshops), solo or not.",

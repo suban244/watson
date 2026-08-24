@@ -18,7 +18,7 @@ DEFAULT_MONTHLY_LIMITS: dict[ExpenseCategory, float] = {
     ExpenseCategory.GROCERIES: 2000,
     ExpenseCategory.HOUSEHOLD: 2000,
     ExpenseCategory.DINING_OUT: 2000,
-    ExpenseCategory.GOING_OUT: 4000,
+    ExpenseCategory.EXPERIENCES: 4000,
     ExpenseCategory.SNACKS: 2000,
     ExpenseCategory.SUBSCRIPTIONS: 2000,
     ExpenseCategory.TRANSPORT: 2000,

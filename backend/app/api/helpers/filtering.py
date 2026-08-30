@@ -1,9 +1,10 @@
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, timedelta
 from fastapi import Query
 from db.models import Transaction
 from services.tags import slugify
 from sqlalchemy.sql.elements import ColumnElement
+from utils.timezone import day_start_npt
 
 
 class TransactionFilter(BaseModel):
@@ -67,9 +68,11 @@ class TransactionFilter(BaseModel):
                 Transaction.tags.overlap([slugify(tag) for tag in self.tags])
             )
         if self.date_from:
-            conditions.append(Transaction.date >= self.date_from)
+            conditions.append(Transaction.date >= day_start_npt(self.date_from))
         if self.date_to:
-            conditions.append(Transaction.date <= self.date_to)
+            conditions.append(
+                Transaction.date < day_start_npt(self.date_to + timedelta(days=1))
+            )
         if self.is_expense is not None:
             conditions.append(Transaction.is_expense == self.is_expense)
         if self.amount_min is not None:

@@ -25,18 +25,16 @@ def next_month_start(day: date | None = None) -> date:
     return start.replace(month=start.month + 1)
 
 
-def month_bounds(day: date | None = None) -> tuple[datetime, datetime]:
-    """Half-open `[start, end)` for a calendar month, anchored at NPT midnight.
-
-    Every month-scoped aggregate needs this. Comparing a timezone-aware
-    `Transaction.date` against a bare `date` anchors midnight in the session
-    timezone (UTC), filing anything spent before 05:45 NPT on the 1st into the
-    previous month.
+def day_start_npt(day: date) -> datetime:
+    """NPT midnight opening `day`.
+    The anchor every date-scoped filter and aggregate needs.
     """
-    return (
-        datetime.combine(month_start(day), time.min, tzinfo=NEPAL_TZ),
-        datetime.combine(next_month_start(day), time.min, tzinfo=NEPAL_TZ),
-    )
+    return datetime.combine(day, time.min, tzinfo=NEPAL_TZ)
+
+
+def month_bounds(day: date | None = None) -> tuple[datetime, datetime]:
+    """Half-open `[start, end)` for a calendar month, anchored at NPT midnight."""
+    return (day_start_npt(month_start(day)), day_start_npt(next_month_start(day)))
 
 
 def parse_date(date_str: str | None) -> datetime | None:

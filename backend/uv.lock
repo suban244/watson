@@ -3675,6 +3675,7 @@ dependencies = [
     { name = "sqlalchemy-paradedb" },
     { name = "taskiq" },
     { name = "taskiq-redis" },
+    { name = "vl-convert-python" },
 ]
 
 [package.dev-dependencies]
@@ -3688,7 +3689,6 @@ dev = [
     { name = "pyclean" },
     { name = "python-dotenv" },
     { name = "ruff" },
-    { name = "vl-convert-python" },
 ]
 
 [package.metadata]
@@ -3698,9 +3698,9 @@ requires-dist = [
     { name = "discord-py", specifier = ">=2.7.1" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.136.3" },
     { name = "greenlet", specifier = ">=3.5.1" },
-    { name = "logfire", extras = ["fastapi", "httpx", "openai", "sqlalchemy"], specifier = ">=4.33.0" },
+    { name = "logfire", extras = ["fastapi", "httpx", "sqlalchemy"], specifier = ">=4.33.0" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.3.4" },
-    { name = "pydantic-ai-harness", extras = ["codecode", "codemode"], specifier = ">=0.24.0" },
+    { name = "pydantic-ai-harness", extras = ["codemode"], specifier = ">=0.24.0" },
     { name = "pydantic-ai-slim", extras = ["mistral", "openrouter"], specifier = ">=2.0" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
     { name = "python-dateutil", specifier = ">=2.9.0.post0" },
@@ -3709,6 +3709,7 @@ requires-dist = [
     { name = "sqlalchemy-paradedb", specifier = ">=0.6.0" },
     { name = "taskiq", specifier = ">=0.12.4" },
     { name = "taskiq-redis", specifier = ">=1.2.2" },
+    { name = "vl-convert-python", specifier = ">=1.9.0.post1" },
 ]
 
 [package.metadata.requires-dev]
@@ -3722,7 +3723,6 @@ dev = [
     { name = "pyclean", specifier = ">=3.7.0" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "ruff", specifier = ">=0.14.4" },
-    { name = "vl-convert-python", specifier = ">=1.9.0.post1" },
 ]
 
 [[package]]

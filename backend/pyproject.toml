@@ -15,12 +15,13 @@ dependencies = [
     "taskiq>=0.12.4",
     "taskiq-redis>=1.2.2",
     "redis>=7.4.0",
-    "logfire[fastapi,httpx,openai,sqlalchemy]>=4.33.0",
+    "logfire[fastapi,httpx,sqlalchemy]>=4.33.0",
     "discord-py>=2.7.1",
     "pydantic-ai-slim[mistral,openrouter]>=2.0",
     "python-dateutil>=2.9.0.post0",
     "greenlet>=3.5.1",
     "pydantic-ai-harness[codemode]>=0.24.0",
+    "vl-convert-python>=1.9.0.post1",
 ]
 
 [dependency-groups]
@@ -35,7 +36,6 @@ dev = [
     "python-dotenv>=1.2.1",
     "httpx>=0.28.1",
     "matplotlib>=3.11.1",
-    "vl-convert-python>=1.9.0.post1",
 ]
 
 [tool.ruff.lint]

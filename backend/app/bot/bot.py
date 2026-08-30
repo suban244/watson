@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 from datetime import datetime, timedelta
 
@@ -9,6 +10,7 @@ from discord.utils import setup_logging
 from pydantic_ai.messages import ModelResponse, TextPart
 from redis.asyncio.client import Redis
 
+from bot.agent.deps import WatsonDeps
 from bot.agent.watson import watson_agent
 from bot.agent.financial_tasks import summary_agent
 from bot.workflows.attachment_processor import Expenses, process_attachment
@@ -59,7 +61,10 @@ async def on_message(message: Message):
         conversation_id,
     ) = await conversation_service.get_or_create_conversation(message.id, reference_id)
 
-    result = await watson_agent.run(message_content, message_history=message_history)
+    deps = WatsonDeps()
+    result = await watson_agent.run(
+        message_content, message_history=message_history, deps=deps
+    )
     logfire.debug(
         "Agent response",
         response=result.output,
@@ -83,6 +88,15 @@ async def on_message(message: Message):
                 conversation_id,
                 message_ids=[sent.id],
             )
+
+    for attachment in deps.attachments:
+        sent = await message.channel.send(
+            file=discord.File(io.BytesIO(attachment.content), attachment.filename)
+        )
+        await conversation_service.append_conversation(
+            conversation_id,
+            message_ids=[sent.id],
+        )
 
 
 def _format_due(due_at: datetime) -> str:

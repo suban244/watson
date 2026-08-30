@@ -58,7 +58,7 @@ async def search_transactions(
         select(Transaction)
         # use table column (ColumnElement) instead of InstrumentedAttribute to satisfy typing
         .where(
-            search.match_any(Transaction.__table__.c.title, *search_query.split()),
+            search.match_any(Transaction.__table__.c.title, search_query),
             *conditions,
         )
         .order_by(Transaction.date.desc(), Transaction.created_at.desc())

@@ -35,13 +35,13 @@ def _get_sync_session_maker() -> sessionmaker[Session]:
     return _sync_session_maker
 
 
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_session() -> AsyncGenerator[AsyncSession]:
     async with async_session_maker() as session:
         yield session
 
 
 @contextmanager
-def sync_session_manager() -> Generator[Session, None, None]:
+def sync_session_manager() -> Generator[Session]:
     session = _get_sync_session_maker()()
     try:
         yield session

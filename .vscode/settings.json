@@ -1,0 +1,13 @@
+{
+	// The backend imports itself flat (`from config import settings`), matching how
+	// `fastapi run app/main.py` starts it — so `backend/app` is the source root, not
+	// `backend`. This covers both the app itself and the notebooks that import it.
+	"python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+	"python.analysis.extraPaths": [
+		"${workspaceFolder}/backend/app"
+	],
+	// Scoped to frontend/ — the root window sees Python and notebook files too.
+	"files.associations": {
+		"frontend/**/*.css": "tailwindcss"
+	}
+}

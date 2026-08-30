@@ -1,10 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { slide } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { getBudgetOverview, getCategoryOptions } from '$lib/api';
-	import type { BudgetOverview, EnvelopeStatus, MonthlyBudgetStatus, PotSummary } from '$lib/api';
+	import { getBudgetOverview, getCategoryOptions, listTags, listTransactions } from '$lib/api';
+	import type {
+		BudgetOverview,
+		EnvelopeStatus,
+		MonthlyBudgetStatus,
+		PotSummary,
+		Transaction
+	} from '$lib/api';
 	import BudgetFormModal from '$lib/components/BudgetFormModal.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 
@@ -14,6 +21,11 @@
 	let switching = $state(false);
 	let error = $state<string | null>(null);
 	let editOpen = $state(false);
+
+	let monthTransactions = $state<Transaction[]>([]);
+	let transactionsLoading = $state(false);
+	let transactionsError = $state(false);
+	let excludedPotSlugs = $state(new Set<string>());
 
 	/** `null` means "whatever the backend calls now" — months are anchored to NPT
 	 * server-side, so the browser's idea of the current month is not authoritative. */
@@ -39,6 +51,10 @@
 			month: 'long',
 			year: 'numeric'
 		});
+	}
+
+	function dayLabel(iso: string): string {
+		return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 	}
 
 	function labelize(value: string): string {
@@ -107,6 +123,50 @@
 		(month?.envelopes ?? []).filter((e) => e.limit === 0 && envelopeSpent(e) > 0)
 	);
 
+	const UNCATEGORIZED = '__uncategorized__';
+
+	let openCategories = $state(new Set<string>());
+
+	function toggleCategory(key: string) {
+		const next = new Set(openCategories);
+		if (next.has(key)) next.delete(key);
+		else next.add(key);
+		openCategories = next;
+	}
+
+	function isExcludedPotSpend(tx: Transaction): boolean {
+		return tx.tags.some((slug) => excludedPotSlugs.has(slug));
+	}
+
+	let transactionsByCategory = $derived.by(() => {
+		const groups = new Map<string, Transaction[]>();
+		for (const tx of monthTransactions) {
+			if (!includePots && isExcludedPotSpend(tx)) continue;
+			const key = tx.category ?? UNCATEGORIZED;
+			const bucket = groups.get(key);
+			if (bucket) bucket.push(tx);
+			else groups.set(key, [tx]);
+		}
+		for (const bucket of groups.values()) bucket.sort((a, b) => b.amount - a.amount);
+		return groups;
+	});
+
+	async function loadMonthTransactions(token: number, monthKey: string) {
+		monthTransactions = [];
+		transactionsError = false;
+		transactionsLoading = true;
+		try {
+			const rows = await listTransactions(1, 500, { month: monthKey, is_expense: true });
+			if (token !== requestId) return;
+			monthTransactions = rows;
+		} catch {
+			// The totals still come from the overview, so only the breakdown is lost.
+			if (token === requestId) transactionsError = true;
+		} finally {
+			if (token === requestId) transactionsLoading = false;
+		}
+	}
+
 	async function load(target: string | null) {
 		const token = ++requestId;
 		switching = true;
@@ -115,6 +175,7 @@
 			if (token !== requestId) return;
 			overview = next;
 			error = null;
+			void loadMonthTransactions(token, next.month.month_start.slice(0, 7));
 		} catch (e) {
 			if (token !== requestId) return;
 			error = e instanceof Error ? e.message : 'Failed to load budget';
@@ -133,9 +194,84 @@
 	});
 
 	onMount(async () => {
-		expenseCategories = (await getCategoryOptions()).expense;
+		const [options, pots] = await Promise.all([getCategoryOptions(), listTags({ is_pot: true })]);
+		expenseCategories = options.expense;
+		excludedPotSlugs = new Set(
+			pots.filter((pot) => pot.exclude_from_monthly).map((pot) => pot.slug)
+		);
 	});
 </script>
+
+<!-- A category with no limit: same row and same breakdown as an envelope, minus
+	 the bar and the percentage, since there is no limit to be a share of. -->
+{#snippet limitlessRow(key: string, label: string, amount: number)}
+	{@const open = openCategories.has(key)}
+	<div class="border-t border-line">
+		<div
+			onclick={() => toggleCategory(key)}
+			onkeydown={(e) => e.key === 'Enter' && toggleCategory(key)}
+			role="button"
+			tabindex="0"
+			aria-expanded={open}
+			class="flex cursor-pointer items-baseline justify-between gap-3 px-5 py-3 transition-colors hover:bg-cream-2"
+		>
+			<span
+				class="flex items-center gap-[6px] text-[13px] {key === UNCATEGORIZED
+					? 'text-ink-3 italic'
+					: 'text-ink-2'}"
+			>
+				<span class="inline-flex text-ink-3 transition-transform {open ? 'rotate-90' : ''}">
+					<Icon name="chevronRight" size={14} />
+				</span>
+				{label}
+			</span>
+			<span class="font-mono text-[12px] text-ink">Rs. {money(amount)}</span>
+		</div>
+
+		{#if open}
+			<div transition:slide={{ duration: 200 }}>
+				{@render breakdown(key)}
+			</div>
+		{/if}
+	</div>
+{/snippet}
+
+<!-- The month's spending in one category. Reads the single fetch every
+	 drill-down shares, so opening a row costs nothing. -->
+{#snippet breakdown(category: string)}
+	{@const rows = transactionsByCategory.get(category) ?? []}
+	<div class="border-t border-dashed border-line bg-cream-2 py-3 pr-5 pl-[40px]">
+		{#if transactionsLoading}
+			<p class="font-mono text-[11px] text-ink-3">Loading transactions…</p>
+		{:else if transactionsError}
+			<p class="font-mono text-[11px] text-negative">Couldn't load this month's transactions</p>
+		{:else if rows.length === 0}
+			<p class="font-mono text-[11px] text-ink-3">Nothing spent here this month</p>
+		{:else}
+			<!-- Capped: a busy month can put 30+ rows in one category, which would
+				 push the rest of the budget off the screen. -->
+			<div class="flex max-h-[320px] flex-col gap-[7px] overflow-y-auto">
+				{#each rows as tx (tx.id)}
+					<div class="grid grid-cols-[52px_1fr_auto] items-baseline gap-3">
+						<span class="font-mono text-[10px] text-ink-3">{dayLabel(tx.date)}</span>
+						<span class="flex min-w-0 items-baseline gap-2">
+							<span class="truncate text-[13px] text-ink-2">{tx.title}</span>
+							{#if includePots && isExcludedPotSpend(tx)}
+								<span
+									class="shrink-0 rounded-full bg-warn-soft px-[7px] py-[2px] font-mono text-[9px] font-medium text-warn"
+									title="Counted here, but a pot has it flagged off-budget"
+								>
+									off-budget
+								</span>
+							{/if}
+						</span>
+						<span class="font-mono text-[12px] text-ink">Rs. {money(tx.amount)}</span>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	</div>
+{/snippet}
 
 <div class="px-9 py-8">
 	<div class="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -249,14 +385,14 @@
 				</div>
 			</div>
 
-			<!-- Envelopes -->
+			<!-- Spending by category -->
 			<p class="mb-3 font-mono text-[10px] font-semibold tracking-widest text-ink-3 uppercase">
-				Envelopes
+				Spending by category
 			</p>
 
 			{#if budgeted.length === 0}
 				<div
-					class="mb-6 rounded-[14px] border border-dashed border-line bg-card px-5 py-10 text-center"
+					class="mb-4 rounded-[14px] border border-dashed border-line bg-card px-5 py-10 text-center"
 				>
 					<p class="text-[14px] text-ink-2">No envelopes set</p>
 					<p class="mt-1 font-mono text-[11px] text-ink-3">
@@ -269,67 +405,100 @@
 						Set limits
 					</button>
 				</div>
-			{:else}
+			{/if}
+
+			<!-- Budgeted and unbudgeted in one list: every row is the same thing to the
+				 reader — a category, what it cost, and what it was spent on. The markers
+				 keep "against a limit" and "no limit at all" legible as different kinds. -->
+			{#if budgeted.length > 0 || unbudgeted.length > 0 || uncategorized > 0}
 				<div class="mb-6 overflow-hidden rounded-[14px] border border-line bg-card">
-					{#each budgeted as envelope, i (envelope.category)}
+					{#if budgeted.length > 0}
+						<div
+							class="bg-cream-2 px-5 py-[9px] font-mono text-[10px] font-medium tracking-widest text-ink-2 uppercase"
+						>
+							Envelopes
+						</div>
+					{/if}
+					{#each budgeted as envelope (envelope.category)}
 						{@const spent = envelopeSpent(envelope)}
 						{@const ratio = spent / envelope.limit}
 						{@const remaining = envelope.limit - spent}
-						<div class="px-5 py-4 {i > 0 ? 'border-t border-line' : ''}">
-							<div class="flex items-baseline justify-between gap-3">
-								<p class="text-[14px] font-medium text-ink">{labelize(envelope.category)}</p>
-								<p class="font-mono text-[12px] text-ink-2">
-									Rs. {money(spent)}
-									<span class="text-ink-3">/ {money(envelope.limit)}</span>
+						{@const open = openCategories.has(envelope.category)}
+						<div class="border-t border-line">
+							<div
+								onclick={() => toggleCategory(envelope.category)}
+								onkeydown={(e) => e.key === 'Enter' && toggleCategory(envelope.category)}
+								role="button"
+								tabindex="0"
+								aria-expanded={open}
+								class="cursor-pointer px-5 py-4 transition-colors hover:bg-cream-2"
+							>
+								<div class="flex items-baseline justify-between gap-3">
+									<p class="flex items-center gap-[6px] text-[14px] font-medium text-ink">
+										<span
+											class="inline-flex text-ink-3 transition-transform {open ? 'rotate-90' : ''}"
+										>
+											<Icon name="chevronRight" size={14} />
+										</span>
+										{labelize(envelope.category)}
+									</p>
+									<p class="font-mono text-[12px] text-ink-2">
+										Rs. {money(spent)}
+										<span class="text-ink-3">/ {money(envelope.limit)}</span>
+									</p>
+								</div>
+
+								<div class="mt-[10px] h-2 overflow-hidden rounded-full bg-cream-2">
+									<div
+										class="h-full rounded-full transition-all {barColor(ratio)}"
+										style="width: {Math.min(ratio, 1) * 100}%"
+									></div>
+								</div>
+
+								<p class="mt-2 flex items-center gap-[5px] font-mono text-[11px]">
+									{#if remaining < 0}
+										<Icon name="expense" size={12} class="text-negative" />
+										<span class="text-negative">Rs. {money(-remaining)} over</span>
+									{:else}
+										<span class="text-ink-2">Rs. {money(remaining)} left</span>
+										<span class="text-ink-3">· {Math.round(ratio * 100)}% used</span>
+									{/if}
+									{#if includePots && envelope.excluded_spent > 0}
+										<span class="text-warn">
+											· includes Rs. {money(envelope.excluded_spent)} from off-budget pots
+										</span>
+									{/if}
 								</p>
 							</div>
 
-							<div class="mt-[10px] h-2 overflow-hidden rounded-full bg-cream-2">
-								<div
-									class="h-full rounded-full transition-all {barColor(ratio)}"
-									style="width: {Math.min(ratio, 1) * 100}%"
-								></div>
-							</div>
-
-							<p class="mt-2 flex items-center gap-[5px] font-mono text-[11px]">
-								{#if remaining < 0}
-									<Icon name="expense" size={12} class="text-negative" />
-									<span class="text-negative">Rs. {money(-remaining)} over</span>
-								{:else}
-									<span class="text-ink-2">Rs. {money(remaining)} left</span>
-									<span class="text-ink-3">· {Math.round(ratio * 100)}% used</span>
-								{/if}
-								{#if includePots && envelope.excluded_spent > 0}
-									<span class="text-warn">
-										· includes Rs. {money(envelope.excluded_spent)} from off-budget pots
-									</span>
-								{/if}
-							</p>
+							{#if open}
+								<div transition:slide={{ duration: 200 }}>
+									{@render breakdown(envelope.category)}
+								</div>
+							{/if}
 						</div>
 					{/each}
-				</div>
-			{/if}
 
-			<!-- Spending with no envelope -->
-			{#if unbudgeted.length > 0 || uncategorized > 0}
-				<div class="mb-6 rounded-[14px] border border-line bg-card px-5 py-4">
-					<p class="font-mono text-[9px] tracking-widest text-ink-3 uppercase">Not budgeted</p>
-					<div class="mt-3 flex flex-col gap-2">
+					{#if unbudgeted.length > 0 || uncategorized > 0}
+						<!-- No top border when this is the card's first row, or it doubles up
+							 against the card's own edge. -->
+						<div
+							class="bg-cream-2 px-5 py-[9px] font-mono text-[10px] font-medium tracking-widest text-ink-2 uppercase
+							{budgeted.length > 0 ? 'border-t border-line' : ''}"
+						>
+							Not budgeted
+						</div>
 						{#each unbudgeted as envelope (envelope.category)}
-							<div class="flex items-baseline justify-between gap-3">
-								<span class="text-[13px] text-ink-2">{labelize(envelope.category)}</span>
-								<span class="font-mono text-[12px] text-ink"
-									>Rs. {money(envelopeSpent(envelope))}</span
-								>
-							</div>
+							{@render limitlessRow(
+								envelope.category,
+								labelize(envelope.category),
+								envelopeSpent(envelope)
+							)}
 						{/each}
 						{#if uncategorized > 0}
-							<div class="flex items-baseline justify-between gap-3">
-								<span class="text-[13px] text-ink-3 italic">Uncategorized</span>
-								<span class="font-mono text-[12px] text-ink">Rs. {money(uncategorized)}</span>
-							</div>
+							{@render limitlessRow(UNCATEGORIZED, 'Uncategorized', uncategorized)}
 						{/if}
-					</div>
+					{/if}
 				</div>
 			{/if}
 

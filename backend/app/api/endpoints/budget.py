@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from schema.budget import BudgetOverview, MonthlyBudgetStatus, MonthlyBudgetUpdate
 from services import budget as budget_service
 from sqlalchemy.ext.asyncio import AsyncSession
-from utils.timezone import month_start
+from utils.timezone import month_start, parse_month_key
 
 router = APIRouter()
 
@@ -14,10 +14,8 @@ def parse_month(value: str | None) -> date:
     """Accept `YYYY-MM` (or a full `YYYY-MM-DD`) and snap to the 1st."""
     if value is None:
         return month_start()
-    if len(value.split("-")) == 2:
-        value = f"{value}-01"
     try:
-        return month_start(date.fromisoformat(value))
+        return parse_month_key(value)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail="month must be YYYY-MM") from exc
 

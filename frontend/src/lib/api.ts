@@ -83,8 +83,28 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 	return res.json() as Promise<T>;
 }
 
-export const listTransactions = (page = 1, size = 500): Promise<Transaction[]> => {
+export interface TransactionFilters {
+	categories?: string[];
+	tags?: string[];
+	date_from?: string;
+	date_to?: string;
+	month?: string; // YYYY-MM, prefer this over date_from/date_to when present
+	is_expense?: boolean;
+	amount_min?: number;
+	amount_max?: number;
+}
+
+export const listTransactions = (
+	page = 1,
+	size = 500,
+	filters: TransactionFilters = {}
+): Promise<Transaction[]> => {
 	const params = new URLSearchParams({ page: String(page), size: String(size) });
+	for (const [key, value] of Object.entries(filters)) {
+		if (value === undefined) continue;
+		if (Array.isArray(value)) value.forEach((v) => params.append(key, v));
+		else params.set(key, String(value));
+	}
 	return request('GET', `/transactions/list/?${params}`);
 };
 

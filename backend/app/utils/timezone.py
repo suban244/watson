@@ -37,6 +37,13 @@ def month_bounds(day: date | None = None) -> tuple[datetime, datetime]:
     return (day_start_npt(month_start(day)), day_start_npt(next_month_start(day)))
 
 
+def parse_month_key(value: str) -> date:
+    """`YYYY-MM` (or a full `YYYY-MM-DD`) snapped to the 1st."""
+    if len(value.split("-")) == 2:
+        value = f"{value}-01"
+    return month_start(date.fromisoformat(value))
+
+
 def parse_date(date_str: str | None) -> datetime | None:
     """Parse a YYYY-MM-DD string into a Nepal-tz datetime.
 

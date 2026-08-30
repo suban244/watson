@@ -1,5 +1,8 @@
 {
 	"recommendations": [
+		"ms-python.python",
+		"ms-python.vscode-pylance",
+		"charliermarsh.ruff",
 		"svelte.svelte-vscode",
 		"esbenp.prettier-vscode",
 		"dbaeumer.vscode-eslint",

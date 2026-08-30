@@ -1,12 +1,7 @@
 import uuid
 
-from pydantic_ai import Tool
 from pydantic_ai.capabilities import Capability
 
-from bot.tools.query_database import (
-    query_database_function,
-    query_function_description,
-)
 from db.session import async_session_maker
 from schema.transaction import ExpenseCategory, IncomeCategory, TransactionCreate
 from services import tags as tag_service
@@ -63,7 +58,8 @@ Transaction workflows:
     - Steps:
         1. Use `search_expenses` for keyword-based lookups (title/description matching).
         2. Use `list_recent_transactions` for "recent" / "last N" style requests.
-        3. Use `query_database` for date-filtered or aggregate queries (totals, counts, date ranges).
+        3. For date-filtered or aggregate queries (totals, counts, date ranges),
+           use `query_database` from the `database` capability.
         4. Return the answer as a text response, never Success.
 
 4. Corrections:
@@ -80,13 +76,6 @@ Transaction workflows:
 Expense categories (pick the closest fit; omit if genuinely unclear, defaults to misc):
 {ExpenseCategory.reference()}
 """,
-    tools=[
-        Tool(
-            function=query_database_function,
-            description=query_function_description,
-            takes_ctx=False,
-        )
-    ],
 )
 
 

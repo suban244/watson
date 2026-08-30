@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = ""
 
+    # SELECT-only login for model-generated analysis SQL; see db.readonly.
+    POSTGRES_READONLY_USER: str = "watson_ro"
+    POSTGRES_READONLY_PASSWORD: str = "watson_ro_local"
+
     REDIS_URL: str
 
     LOGFIRE_TOKEN: str | None = None

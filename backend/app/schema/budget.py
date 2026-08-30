@@ -26,7 +26,7 @@ DEFAULT_MONTHLY_LIMITS: dict[ExpenseCategory, float] = {
     ExpenseCategory.MISC: 2000,
 }
 
-DEFAULT_OVERALL_LIMIT: float | None = 2000
+DEFAULT_OVERALL_LIMIT: float | None = 20000
 
 BudgetSource = Literal["standard", "override"]
 

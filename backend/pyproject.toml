@@ -23,10 +23,20 @@ dependencies = [
 ]
 
 [dependency-groups]
+# Tooling and notebook deps only — the Docker image builds with `--no-dev`.
 dev = [
-    "pre-commit>=4.1.0",
-    "ruff>=0.9.10",
+    "pre-commit>=4.3.0",
+    "ruff>=0.14.4",
+    "pyclean>=3.7.0",
+    "ipykernel>=7.1.0",
+    "marimo>=0.17.8",
+    "mistralai>=1.9.11",
+    "python-dotenv>=1.2.1",
+    "httpx>=0.28.1",
 ]
+
+[tool.ruff.lint]
+extend-select = ["FBT"]
 
 [tool.uv]
 exclude-newer = "1 weeks"

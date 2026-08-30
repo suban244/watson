@@ -41,7 +41,7 @@ uv_sync:
 	uv --directory ./backend sync
 
 check:
-	uv run pre-commit run -a
+	uv run --directory ./backend pre-commit run -a
 
 makemigrations:
 	@echo "Generating migrations."

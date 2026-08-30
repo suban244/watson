@@ -78,9 +78,9 @@ class Transaction(PrimaryUUIDTimestamped):
         Index("ix_transactions_tags", "tags", postgresql_using="gin"),
         Index(
             "ix_transactions_bm25",
-            indexing.BM25Field(column("id")),
-            indexing.BM25Field(column("title")),
-            indexing.BM25Field(column("description")),
+            indexing.ParadeDBField(column("id")),
+            indexing.ParadeDBField(column("title")),
+            indexing.ParadeDBField(column("description")),
             postgresql_using="bm25",
             postgresql_with={"key_field": "id"},
         ),

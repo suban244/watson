@@ -45,7 +45,7 @@ class AgentResponse(BaseModel):
     success_marker: bool = False
 
 
-def _make_model() -> OpenRouterModel:
+def make_model() -> OpenRouterModel:
     return OpenRouterModel(
         model_name="openai/gpt-5.6-luna",
         provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
@@ -53,7 +53,7 @@ def _make_model() -> OpenRouterModel:
 
 
 watson_agent = Agent(
-    model=_make_model(),
+    model=make_model(),
     instructions=instructions,
     output_type=AgentResponse,
     capabilities=[transactions, reminders, tags],

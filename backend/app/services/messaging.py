@@ -1,5 +1,6 @@
-from services.redis import redis_service
 import json
+
+from services.redis import redis_service
 
 
 class MessagingService:

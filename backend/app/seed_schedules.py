@@ -1,10 +1,12 @@
 import asyncio
+
 from taskiq import ScheduledTask
+
 from scheduler import source
+from tasks.external.prabin_spotify.send_invoices import send_prabin_spotify_invoices
 from tasks.finances.calculate_expenses_of_last_week import (
     calculate_expenses_of_last_week,
 )
-from tasks.external.prabin_spotify.send_invoices import send_prabin_spotify_invoices
 from tasks.reminders.dispatch_due_reminders import dispatch_due_reminders
 
 

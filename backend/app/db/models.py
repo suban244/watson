@@ -2,6 +2,7 @@ import uuid
 from datetime import date, datetime
 from enum import StrEnum
 
+from paradedb.sqlalchemy import indexing
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -17,7 +18,6 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import func
-from paradedb.sqlalchemy import indexing
 
 
 class Base(DeclarativeBase):

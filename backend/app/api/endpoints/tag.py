@@ -1,11 +1,12 @@
 import uuid
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from db.models import TagStatus
 from db.session import get_session
-from fastapi import APIRouter, Depends, HTTPException, Query
 from schema.tag import TagCreate, TagRead, TagUpdate
 from services import tags as tag_service
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 

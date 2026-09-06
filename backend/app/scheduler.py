@@ -1,7 +1,8 @@
 from taskiq import TaskiqScheduler
 from taskiq_redis import RedisScheduleSource
-from taskiq_app import broker
+
 from config import settings
+from taskiq_app import broker
 
 source = RedisScheduleSource(settings.REDIS_URL)
 

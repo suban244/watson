@@ -1,7 +1,8 @@
+import logfire
 from taskiq import TaskiqEvents, TaskiqState
 from taskiq_redis import RedisAsyncResultBackend, RedisStreamBroker
+
 from config import settings
-import logfire
 
 broker = RedisStreamBroker(settings.REDIS_URL).with_result_backend(
     RedisAsyncResultBackend(settings.REDIS_URL, result_ex_time=1000)

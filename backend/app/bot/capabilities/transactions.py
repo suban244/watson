@@ -2,13 +2,12 @@ import uuid
 
 from pydantic_ai.capabilities import Capability
 
+from db.models import Transaction
 from db.session import async_session_maker
 from schema.transaction import ExpenseCategory, IncomeCategory, TransactionCreate
 from services import tags as tag_service
 from services import transactions as transaction_service
 from utils.timezone import parse_date
-
-from db.models import Transaction
 
 
 def format_transaction(transaction: Transaction) -> str:

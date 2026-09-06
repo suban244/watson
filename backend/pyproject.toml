@@ -38,8 +38,11 @@ dev = [
     "matplotlib>=3.11.1",
 ]
 
+[tool.ruff]
+src = ["app"]
+
 [tool.ruff.lint]
-extend-select = ["FBT"]
+extend-select = ["FBT", "I"]
 
 [tool.uv]
 exclude-newer = "1 weeks"

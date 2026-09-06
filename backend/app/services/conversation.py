@@ -1,8 +1,9 @@
 import logfire
-from sqlalchemy import cast, select
-from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
-from sqlalchemy.sql import func
 from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter
+from sqlalchemy import cast, select
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.sql import func
 
 from db.models import DiscordConversation
 from db.session import async_session_maker

@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from pathlib import Path
 
 import logfire
+
 from config import settings
 from taskiq_app import broker
 

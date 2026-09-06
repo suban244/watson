@@ -11,11 +11,11 @@ from pydantic_ai.messages import ModelResponse, TextPart
 from redis.asyncio.client import Redis
 
 from bot.agent.deps import WatsonDeps
-from bot.agent.watson import watson_agent
 from bot.agent.financial_tasks import summary_agent
+from bot.agent.watson import watson_agent
 from bot.workflows.attachment_processor import Expenses, process_attachment
-from services.conversation import conversation_service
 from config import settings
+from services.conversation import conversation_service
 from utils.timezone import now_nepal
 
 # A reminder more than this far past its due_at is treated as having missed

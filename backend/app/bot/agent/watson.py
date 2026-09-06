@@ -2,12 +2,12 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai.models.openrouter import OpenRouterModel
 from pydantic_ai.providers.openrouter import OpenRouterProvider
+from pydantic_ai_harness import CodeMode
 
 from bot.agent.deps import WatsonDeps
 from bot.capabilities import charts, database, reminders, tags, transactions
 from config import settings
 from utils.timezone import now_nepal
-from pydantic_ai_harness import CodeMode
 
 
 def instructions() -> str:

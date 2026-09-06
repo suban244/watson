@@ -1,11 +1,31 @@
+.DEFAULT_GOAL := help
+
+.PHONY: help dev run_local prod stop_prod uv_lock uv_sync check \
+	makemigrations migrate downgrade alembic_current
+
+help:
+	@echo "usage: make <target>"
+	@echo ""
+	@echo "  dev              launch vscode + the watson tmux session"
+	@echo "  run_local        docker compose up (local.yml, --watch)"
+	@echo "  prod             docker compose up (prod.yml)"
+	@echo "  stop_prod        docker compose down (prod.yml)"
+	@echo "  uv_lock          lock backend dependencies"
+	@echo "  uv_sync          sync backend dependencies"
+	@echo "  check            run pre-commit on all files"
+	@echo "  makemigrations   alembic autogenerate  (message=<message>)"
+	@echo "  migrate          alembic upgrade head"
+	@echo "  downgrade        alembic downgrade -1"
+	@echo "  alembic_current  show current db revision"
+
+	@[ -n "$(MAKECMDGOALS)" ] || exit 2
 
 dev:
 	@echo "Launching dev environment..."
-	@code $(PWD)/workspace.code-workspace
+	@code .
 	@SESSION="watson"; \
 	if tmux has-session -t $$SESSION 2>/dev/null; then \
 		echo "Session '$$SESSION' already exists, attaching..."; \
-		tmux attach-session -t $$SESSION; \
 	else \
 		tmux new-session -d -s $$SESSION -x 220 -y 50; \
 		tmux rename-window -t $$SESSION:1 "lazygit"; \
@@ -17,6 +37,10 @@ dev:
 		tmux send-keys -t $$SESSION:4 "cd $(PWD)/frontend" Enter; \
 		tmux new-window -t $$SESSION; \
 		tmux select-window -t $$SESSION:1; \
+	fi; \
+	if [ -n "$$TMUX" ]; then \
+		tmux switch-client -t $$SESSION; \
+	else \
 		tmux attach-session -t $$SESSION; \
 	fi
 

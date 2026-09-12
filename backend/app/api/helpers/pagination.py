@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import Query
 from pydantic import BaseModel
 
@@ -18,16 +20,16 @@ class Pagination:
 
     async def skip_limit(
         self,
-        skip: int = Query(0, ge=0),
-        limit: int = Query(20, ge=0),
+        skip: Annotated[int, Query(ge=0)] = 0,
+        limit: Annotated[int, Query(ge=0)] = 20,
     ) -> PaginationSkipLimit:
         capped_limit = min(self.maximum_limit, limit)
         return PaginationSkipLimit(skip=skip, limit=capped_limit)
 
     async def page_size(
         self,
-        page: int = Query(1, ge=1),
-        size: int = Query(20, ge=0),
+        page: Annotated[int, Query(ge=1)] = 1,
+        size: Annotated[int, Query(ge=0)] = 20,
     ) -> PaginationPageSize:
         capped_size = min(self.maximum_limit, size)
         return PaginationPageSize(page=page, size=capped_size)

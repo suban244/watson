@@ -1,4 +1,5 @@
 import asyncio
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
@@ -22,7 +23,7 @@ class SingleInvoiceParams(BaseModel):
     name: str
 
 
-async def verify_internal_token(x_internal_token: str = Header(...)):
+async def verify_internal_token(x_internal_token: Annotated[str, Header()]):
     if x_internal_token != settings.INTERNAL_API_TOKEN:
         raise HTTPException(status_code=403, detail="Forbidden")
 

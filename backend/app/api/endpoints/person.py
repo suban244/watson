@@ -1,9 +1,8 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException
 
-from db.session import get_session
+from api.deps import SessionDep
 from schema.person import PersonCreate, PersonRead, PersonUpdate
 from services import people as people_service
 
@@ -13,7 +12,7 @@ router = APIRouter()
 @router.post("/", response_model=PersonRead)
 async def create_person(
     person: PersonCreate,
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
 ):
     try:
         return await people_service.create_person(session, person)
@@ -22,14 +21,12 @@ async def create_person(
 
 
 @router.get("/list/", response_model=list[PersonRead])
-async def get_person_list(session: AsyncSession = Depends(get_session)):
+async def get_person_list(session: SessionDep):
     return await people_service.list_people(session)
 
 
 @router.get("/{person_id}/", response_model=PersonRead)
-async def get_person(
-    person_id: uuid.UUID, session: AsyncSession = Depends(get_session)
-):
+async def get_person(person_id: uuid.UUID, session: SessionDep):
     person = await people_service.get_person(session, person_id)
     if person is None:
         raise HTTPException(status_code=404, detail="Person not found")
@@ -40,7 +37,7 @@ async def get_person(
 async def update_person(
     person_id: uuid.UUID,
     person_update: PersonUpdate,
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
 ):
     try:
         person = await people_service.update_person(
@@ -57,7 +54,7 @@ async def update_person(
 @router.delete("/{person_id}/", status_code=204)
 async def delete_person(
     person_id: uuid.UUID,
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
 ):
     try:
         deleted = await people_service.delete_person(session, person_id)

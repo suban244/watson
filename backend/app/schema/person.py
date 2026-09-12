@@ -1,8 +1,8 @@
 """Person schemas."""
 
-from uuid import UUID
-
 from pydantic import BaseModel, ConfigDict
+
+from schema.types import StrUUID
 
 
 class PersonBase(BaseModel):
@@ -15,7 +15,7 @@ class PersonCreate(PersonBase):
 
 
 class PersonRead(PersonBase):
-    id: UUID
+    id: StrUUID
     nickname: str
 
     model_config = ConfigDict(from_attributes=True)

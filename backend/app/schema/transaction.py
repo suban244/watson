@@ -1,8 +1,9 @@
 from datetime import datetime
 from enum import StrEnum
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from schema.types import StrUUID
 
 
 class IncomeCategory(StrEnum):
@@ -91,7 +92,7 @@ class TransactionCreate(Transaction):
 
 
 class TransactionRead(Transaction):
-    id: UUID
+    id: StrUUID
     pass
 
 

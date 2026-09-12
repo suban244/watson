@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from schema.person import PersonRead
 from schema.transaction import TransactionCreate, TransactionRead
+from schema.types import StrUUID
 
 SIGN_CONVENTION = "positive means they owe you, negative means you owe them"
 
@@ -17,8 +18,9 @@ class LedgerEntryCreate(BaseModel):
 
 
 class LedgerEntryRead(LedgerEntryCreate):
-    id: UUID
-    person_id: UUID
+    id: StrUUID
+    person_id: StrUUID
+    transaction_id: StrUUID | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,9 +1,9 @@
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, Query
 
-from db.session import get_session
+from api.deps import SessionDep
 from schema.ledger import (
     LedgerEntryCreate,
     LedgerEntryRead,
@@ -19,14 +19,14 @@ router = APIRouter()
 
 
 @router.get("/balances/", response_model=list[PersonBalance])
-async def get_balances(session: AsyncSession = Depends(get_session)):
+async def get_balances(session: SessionDep):
     return await ledger_service.balances(session)
 
 
 @router.get("/entries/", response_model=list[LedgerEntryRead])
 async def get_entries(
-    limit: int = Query(50, ge=1, le=500),
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
+    limit: Annotated[int, Query(ge=1, le=500)] = 50,
 ):
     return await ledger_service.list_entries(session, limit=limit)
 
@@ -34,8 +34,8 @@ async def get_entries(
 @router.get("/people/{person_id}/entries/", response_model=list[LedgerEntryRead])
 async def get_person_entries(
     person_id: uuid.UUID,
-    limit: int = Query(50, ge=1, le=500),
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
+    limit: Annotated[int, Query(ge=1, le=500)] = 50,
 ):
     if await people_service.get_person(session, person_id) is None:
         raise HTTPException(status_code=404, detail="Person not found")
@@ -46,7 +46,7 @@ async def get_person_entries(
 async def create_person_entry(
     person_id: uuid.UUID,
     entry: LedgerEntryCreate,
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
 ):
     if await people_service.get_person(session, person_id) is None:
         raise HTTPException(status_code=404, detail="Person not found")
@@ -56,7 +56,7 @@ async def create_person_entry(
 @router.post("/shared-expense/", response_model=SharedExpenseRead)
 async def create_shared_expense(
     payload: SharedExpenseCreate,
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
 ):
     nicknames: dict[uuid.UUID, str] = {}
     for share in payload.shares:
@@ -89,7 +89,7 @@ async def create_shared_expense(
 @router.delete("/entries/{entry_id}/", status_code=204)
 async def delete_entry(
     entry_id: uuid.UUID,
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
 ):
     if not await ledger_service.delete_entry(session, entry_id):
         raise HTTPException(status_code=404, detail="Ledger entry not found")

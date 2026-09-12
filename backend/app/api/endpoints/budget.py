@@ -1,14 +1,18 @@
 from datetime import date
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, Query
 
-from db.session import get_session
+from api.deps import SessionDep
 from schema.budget import BudgetOverview, MonthlyBudgetStatus, MonthlyBudgetUpdate
 from services import budget as budget_service
 from utils.timezone import month_start, parse_month_key
 
 router = APIRouter()
+
+MonthQuery = Annotated[
+    str | None, Query(description="Month as YYYY-MM; defaults to now")
+]
 
 
 def parse_month(value: str | None) -> date:
@@ -22,30 +26,21 @@ def parse_month(value: str | None) -> date:
 
 
 @router.get("/overview/", response_model=BudgetOverview)
-async def get_overview(
-    *,
-    month: str | None = Query(None, description="Month as YYYY-MM; defaults to now"),
-    session: AsyncSession = Depends(get_session),
-):
+async def get_overview(session: SessionDep, month: MonthQuery = None):
     """Active pots with their spend to date, plus the month's envelope status."""
     return await budget_service.overview(session, parse_month(month))
 
 
 @router.get("/monthly/", response_model=MonthlyBudgetStatus)
-async def get_monthly(
-    *,
-    month: str | None = Query(None, description="Month as YYYY-MM; defaults to now"),
-    session: AsyncSession = Depends(get_session),
-):
+async def get_monthly(session: SessionDep, month: MonthQuery = None):
     return await budget_service.monthly_status(session, parse_month(month))
 
 
 @router.patch("/monthly/", response_model=MonthlyBudgetStatus)
 async def update_monthly(
     budget_update: MonthlyBudgetUpdate,
-    *,
-    month: str | None = Query(None, description="Month as YYYY-MM; defaults to now"),
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
+    month: MonthQuery = None,
 ):
     """Override the standard budget for this month."""
     target = parse_month(month)
@@ -56,11 +51,7 @@ async def update_monthly(
 
 
 @router.delete("/monthly/", response_model=MonthlyBudgetStatus)
-async def clear_monthly(
-    *,
-    month: str | None = Query(None, description="Month as YYYY-MM; defaults to now"),
-    session: AsyncSession = Depends(get_session),
-):
+async def clear_monthly(session: SessionDep, month: MonthQuery = None):
     """Drop this month's override so it follows the standard budget again."""
     target = parse_month(month)
     await budget_service.clear_monthly_budget(session, target)

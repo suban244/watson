@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from typing import Annotated
 
 from fastapi import HTTPException, Query
 from pydantic import BaseModel
@@ -25,34 +26,43 @@ class TransactionFilter(BaseModel):
     def get_filterset(
         cls,
         *,
-        categories: list[str] = Query(
-            None, description="Filter transactions by categories"
-        ),
-        tags: list[str] = Query(
-            None,
-            description="Filter to transactions carrying any of these tag slugs",
-        ),
-        date_from: date = Query(
-            None, description="Filter transactions from this date (YYYY-MM-DD)"
-        ),
-        date_to: date = Query(
-            None, description="Filter transactions up to this date (YYYY-MM-DD)"
-        ),
-        month: str = Query(
-            None,
-            description="Filter to a whole calendar month (YYYY-MM), NPT-anchored",
-        ),
-        is_expense: bool = Query(
-            None, description="Filter transactions by expense type"
-        ),
-        amount_min: float = Query(
-            None,
-            description="Filter transactions with amount greater than or equal to this value",
-        ),
-        amount_max: float = Query(
-            None,
-            description="Filter transactions with amount less than or equal to this value",
-        ),
+        categories: Annotated[
+            list[str] | None,
+            Query(description="Filter transactions by categories"),
+        ] = None,
+        tags: Annotated[
+            list[str] | None,
+            Query(description="Filter to transactions carrying any of these tag slugs"),
+        ] = None,
+        date_from: Annotated[
+            date | None,
+            Query(description="Filter transactions from this date (YYYY-MM-DD)"),
+        ] = None,
+        date_to: Annotated[
+            date | None,
+            Query(description="Filter transactions up to this date (YYYY-MM-DD)"),
+        ] = None,
+        month: Annotated[
+            str | None,
+            Query(
+                description="Filter to a whole calendar month (YYYY-MM), NPT-anchored"
+            ),
+        ] = None,
+        is_expense: Annotated[
+            bool | None, Query(description="Filter transactions by expense type")
+        ] = None,
+        amount_min: Annotated[
+            float | None,
+            Query(
+                description="Filter transactions with amount greater than or equal to this value"
+            ),
+        ] = None,
+        amount_max: Annotated[
+            float | None,
+            Query(
+                description="Filter transactions with amount less than or equal to this value"
+            ),
+        ] = None,
     ):
         try:
             parsed_month = parse_month_key(month) if month else None

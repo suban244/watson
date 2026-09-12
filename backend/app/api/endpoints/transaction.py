@@ -1,11 +1,11 @@
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.deps import SessionDep
 from api.helpers.filtering import TransactionFilter
 from api.helpers.pagination import Pagination, PaginationPageSize
-from db.session import get_session
 from schema.transaction import (
     CategoryOptions,
     ExpenseCategory,
@@ -19,11 +19,14 @@ from services import transactions as transaction_service
 
 router = APIRouter()
 
+PaginationDep = Annotated[PaginationPageSize, Depends(Pagination().page_size)]
+FiltersDep = Annotated[TransactionFilter, Depends(TransactionFilter.get_filterset)]
+
 
 @router.post("/", response_model=TransactionRead)
 async def create_transaction(
     transaction: TransactionCreate,
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
 ):
     try:
         return await transaction_service.create_transaction(session, transaction)
@@ -34,9 +37,9 @@ async def create_transaction(
 
 @router.get("/list/", response_model=list[TransactionRead])
 async def get_transaction_list(
-    session: AsyncSession = Depends(get_session),
-    pagination: PaginationPageSize = Depends(Pagination().page_size),
-    filters: TransactionFilter = Depends(TransactionFilter.get_filterset),
+    session: SessionDep,
+    pagination: PaginationDep,
+    filters: FiltersDep,
 ):
     return await transaction_service.list_transactions(
         session,
@@ -49,9 +52,9 @@ async def get_transaction_list(
 @router.post("/search/", response_model=list[TransactionRead])
 async def search_transactions(
     transaction_search: TransactionSearch,
-    session: AsyncSession = Depends(get_session),
-    pagination: PaginationPageSize = Depends(Pagination().page_size),
-    filters: TransactionFilter = Depends(TransactionFilter.get_filterset),
+    session: SessionDep,
+    pagination: PaginationDep,
+    filters: FiltersDep,
 ):
     return await transaction_service.search_transactions(
         session,
@@ -63,7 +66,7 @@ async def search_transactions(
 
 
 @router.get("/categories/", response_model=list[str])
-async def get_categories(session: AsyncSession = Depends(get_session)):
+async def get_categories(session: SessionDep):
     return await transaction_service.list_categories(session)
 
 
@@ -76,9 +79,7 @@ async def get_category_options():
 
 
 @router.get("/{transaction_id}/", response_model=TransactionRead)
-async def get_transaction(
-    transaction_id: uuid.UUID, session: AsyncSession = Depends(get_session)
-):
+async def get_transaction(transaction_id: uuid.UUID, session: SessionDep):
     transaction = await transaction_service.get_transaction(session, transaction_id)
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -89,7 +90,7 @@ async def get_transaction(
 async def update_transaction(
     transaction_id: uuid.UUID,
     transaction_update: TransactionUpdate,
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
 ):
     try:
         transaction = await transaction_service.update_transaction(
@@ -106,7 +107,7 @@ async def update_transaction(
 @router.delete("/{transaction_id}/", status_code=204)
 async def delete_transaction(
     transaction_id: uuid.UUID,
-    session: AsyncSession = Depends(get_session),
+    session: SessionDep,
 ):
     deleted = await transaction_service.delete_transaction(session, transaction_id)
     if not deleted:

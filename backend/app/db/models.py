@@ -9,6 +9,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     Float,
+    ForeignKey,
     Index,
     String,
     Text,
@@ -146,6 +147,57 @@ class MonthlyBudget(PrimaryTimestamped):
     # Its own column, not a reserved key inside `limits` that could collide
     # with a category name.
     overall_limit: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class Person(PrimaryUUIDTimestamped):
+    """Someone Watson knows about."""
+
+    __tablename__ = "people"
+
+    nickname: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        unique=True,
+        comment="How the user refers to them; the handle tools resolve",
+    )
+    full_name: Mapped[str | None] = mapped_column(
+        String(200), nullable=True, comment="Formal name, for emails and invoices"
+    )
+
+
+class LedgerEntry(PrimaryUUIDTimestamped):
+    """One money event between you and a person.
+
+    `amount` is signed: positive means they owe you, negative means you owe
+    them. A repayment is just an entry with the opposite sign, so a balance is
+    `SUM(amount)` and there is no settled/unsettled state to keep in step.
+
+    Lending is not spending, so these rows do not imply a transaction. A split
+    bill does: `transaction_id` then points at the expense that recorded *your*
+    share, and the full bill is that amount plus the entries linked to it.
+    """
+
+    __tablename__ = "ledger_entries"
+
+    person_id: Mapped[uuid.UUID] = mapped_column(
+        UUID,
+        ForeignKey("people.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    amount: Mapped[float] = mapped_column(
+        Float, nullable=False, comment="Signed: + they owe you, - you owe them"
+    )
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    transaction_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID,
+        ForeignKey("transactions.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="The expense this entry was split out of, when there was one",
+    )
+
+    __table_args__ = (Index("ix_ledger_entries_person_id_date", "person_id", "date"),)
 
 
 class ReminderStatus(StrEnum):

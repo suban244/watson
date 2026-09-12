@@ -82,3 +82,35 @@ class MonthlyBudgetUpdate(BaseModel):
     overall_limit: float | None = None
 
     model_config = ConfigDict(extra="forbid")
+
+
+class CategorySpend(BaseModel):
+    spent: float
+    limit: float
+
+
+class MonthHistoryEntry(BaseModel):
+    """One month's totals, as of the month it names.
+
+    `overall_limit` is the limit that month was budgeted at, not today's
+    standard — a materialised `MonthlyBudget` row keeps its own figure, so a
+    later edit to the template cannot redraw history.
+    """
+
+    month: date
+    gross_spend: float
+    excluded_spend: float
+    net_spend: float
+    overall_limit: float | None
+    source: BudgetSource
+    # True for the month in progress: its total is not comparable to a finished
+    # one, and charts must mark it rather than plot it as a complete bar.
+    partial: bool
+    categories: dict[str, CategorySpend]
+
+
+class BudgetHistory(BaseModel):
+    """Oldest first, one entry per calendar month with no gaps — a month with
+    no transactions is present at zero so a chart's x-axis stays even."""
+
+    months: list[MonthHistoryEntry]

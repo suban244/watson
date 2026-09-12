@@ -5,7 +5,15 @@ from pydantic_ai.providers.openrouter import OpenRouterProvider
 from pydantic_ai_harness import CodeMode
 
 from bot.agent.deps import WatsonDeps
-from bot.capabilities import charts, database, reminders, tags, transactions
+from bot.capabilities import (
+    charts,
+    database,
+    ledger,
+    people,
+    reminders,
+    tags,
+    transactions,
+)
 from config import settings
 from utils.timezone import now_nepal
 
@@ -59,5 +67,14 @@ watson_agent = Agent(
     instructions=instructions,
     output_type=AgentResponse,
     deps_type=WatsonDeps,
-    capabilities=[transactions, reminders, tags, charts, database, CodeMode()],
+    capabilities=[
+        transactions,
+        reminders,
+        tags,
+        charts,
+        database,
+        people,
+        ledger,
+        CodeMode(),
+    ],
 )

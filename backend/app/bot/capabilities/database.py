@@ -16,7 +16,14 @@ from pydantic_ai.capabilities import Capability
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.schema import CreateTable
 
-from db.models import MonthlyBudget, Reminder, Tag, Transaction
+from db.models import (
+    LedgerEntry,
+    MonthlyBudget,
+    Person,
+    Reminder,
+    Tag,
+    Transaction,
+)
 from db.readonly import async_readonly_connection
 
 # Rows travel through the model's context, not a sandbox, so this caps what fits
@@ -26,7 +33,7 @@ MAX_ROWS = 500
 # Generated from the ORM models so the schema shown to the LLM never drifts.
 SCHEMA_REFERENCE = "\n".join(
     str(CreateTable(model.__table__).compile(dialect=postgresql.dialect()))  # type: ignore[arg-type]
-    for model in (Transaction, Tag, MonthlyBudget, Reminder)
+    for model in (Transaction, Tag, MonthlyBudget, Reminder, Person, LedgerEntry)
 )
 
 
@@ -59,6 +66,11 @@ Database domain:
   transactions and adding them up yourself.
 - `tags` is a text[] of tag slugs: match it with `'slug' = ANY(tags)` or
   `tags @> ARRAY['slug']`, never with `=`.
+- `ledger_entries.amount` is signed: positive means that person owes the user,
+  negative means the user owes them. A balance is `SUM(amount)` per person, so
+  join `people` and GROUP BY rather than looking for a balance column. Loans
+  are not in `transactions` at all — only the user's own share of a split bill
+  is, linked back by `ledger_entries.transaction_id`.
 - Amounts are NPR. Dates come back as ISO strings, ready to put straight into a
   chart spec.
 

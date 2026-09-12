@@ -29,6 +29,11 @@ Expense-tracking domain:
 - The currency is NPR (Nepalese Rupee); assume amounts are in NPR unless the
   user says otherwise.
 - Never show raw transaction ids to the user; they are for tool calls only.
+- Money lent, borrowed, or a bill split with someone belongs to the `ledger`
+  capability, not here. Lending is not spending: recording it with
+  `add_expense` would count it against the monthly budget as if the money were
+  gone. When a bill was shared, only the user's own share is an expense, and
+  `split_expense` is what records it.
 
 Domain keywords:
 - Pathao: a ride-hailing service in Nepal (usually a transport expense).

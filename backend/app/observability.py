@@ -14,8 +14,9 @@ def setup_logfire(service_name: str) -> None:
         distributed_tracing=True,
     )
 
-    # Imported here so the beat process, which loads taskiq_app but never
-    # touches the DB, doesn't pull in SQLAlchemy.
-    from db.session import engine
+    # # Imported here so the beat process, which loads taskiq_app but never
+    # # touches the DB, doesn't pull in SQLAlchemy.
+    # I don't think this is necessary right now
+    # from db.session import engine
 
-    logfire.instrument_sqlalchemy(engine=engine)
+    # logfire.instrument_sqlalchemy(engine=engine)

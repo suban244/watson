@@ -18,7 +18,8 @@
 			items: [
 				{ href: '/transactions', label: 'Transactions', icon: 'transactions' },
 				{ href: '/tags', label: 'Tags', icon: 'tag' },
-				{ href: '/budget', label: 'Budget', icon: 'budget' }
+				{ href: '/budget', label: 'Budget', icon: 'budget' },
+				{ href: '/ledger', label: 'Ledger', icon: 'ledger' }
 			]
 		},
 		{ heading: 'Insights', items: [{ href: '/analytics', label: 'Analytics', icon: 'analytics' }] }

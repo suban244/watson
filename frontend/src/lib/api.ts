@@ -219,3 +219,71 @@ export const restoreTag = (id: string): Promise<Tag> => request('POST', `/tags/$
 
 /** Rejected with 409 while the tag is still on a transaction — archive instead. */
 export const deleteTag = (id: string): Promise<null> => request('DELETE', `/tags/${id}/`);
+
+export interface Person {
+	id: string;
+	nickname: string;
+	full_name: string | null;
+	meta: Record<string, unknown> | null;
+}
+
+// Every ledger amount is signed the same way as `SIGN_CONVENTION` in
+// backend/app/schema/ledger.py: positive means they owe you, negative means you owe them.
+
+export interface PersonBalance extends Person {
+	balance: number;
+	entry_count: number;
+}
+
+export interface LedgerEntry {
+	id: string;
+	person_id: string;
+	amount: number;
+	title: string;
+	date: string;
+	/** Set when the entry came from a shared expense. */
+	transaction_id: string | null;
+}
+
+export type LedgerEntryCreate = Pick<LedgerEntry, 'amount' | 'title' | 'date'>;
+
+export interface LedgerShare {
+	person_id: string;
+	/** What this person owes you, positive. */
+	amount: number;
+}
+
+export interface SharedExpenseCreate {
+	/** Your share only, not the bill total. */
+	expense: TransactionCreate;
+	shares: LedgerShare[];
+}
+
+export interface SharedExpenseResult {
+	transaction: Transaction;
+	entries: (LedgerEntry & { nickname: string })[];
+}
+
+export const getLedgerBalances = (): Promise<PersonBalance[]> =>
+	request('GET', '/ledger/balances/');
+
+/** Newest first. Scoped to one person when `personId` is given. */
+export const listLedgerEntries = (personId?: string, limit = 500): Promise<LedgerEntry[]> =>
+	request(
+		'GET',
+		personId
+			? `/ledger/people/${personId}/entries/?limit=${limit}`
+			: `/ledger/entries/?limit=${limit}`
+	);
+
+export const createLedgerEntry = (
+	personId: string,
+	data: LedgerEntryCreate
+): Promise<LedgerEntry> => request('POST', `/ledger/people/${personId}/entries/`, data);
+
+export const createSharedExpense = (data: SharedExpenseCreate): Promise<SharedExpenseResult> =>
+	request('POST', '/ledger/shared-expense/', data);
+
+/** Leaves a linked transaction in place; only the entry goes. */
+export const deleteLedgerEntry = (id: string): Promise<null> =>
+	request('DELETE', `/ledger/entries/${id}/`);

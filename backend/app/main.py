@@ -5,7 +5,7 @@ import logfire
 from fastapi import FastAPI
 
 from api import router as api_router
-from config import settings
+from observability import setup_logfire
 
 
 @asynccontextmanager
@@ -23,15 +23,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-logfire.configure(
-    token=settings.LOGFIRE_TOKEN,
-    send_to_logfire="if-token-present",
-    environment=settings.APP_ENV,
-    scrubbing=False,
-    service_name="watson",
-    distributed_tracing=True,
-)
-
+setup_logfire("watson")
 logfire.instrument_fastapi(app, capture_headers=True)
 logfire.instrument_pydantic_ai()
 logfire.instrument_httpx()

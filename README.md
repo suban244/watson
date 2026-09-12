@@ -67,3 +67,6 @@ and [docs/BACKUP.md](docs/BACKUP.md).
 - [ ] Backup and restore DB
 - [ ] Voice input
 - [ ] Integrate with self hosted Fizzy (https://fizzy.do)
+- [ ] Facts about people, searchable and filterable by person ("when is raship's birthday?")
+- [ ] Email someone about money they owe, pulled from their ledger
+- [ ] Weekly summary compares each category to its usual spend

@@ -2,6 +2,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime
 
+import logfire
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -99,6 +100,7 @@ async def settle(
     )
 
 
+@logfire.instrument(record_return=True)
 async def record_shared_expense(
     session: AsyncSession,
     expense: TransactionCreate,

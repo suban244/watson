@@ -3385,6 +3385,14 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/4b/c37a3cdfaff2ff53c3ca5d5289636b42141c9964f67d16df3017a97be9c6/taskiq-0.12.5-py3-none-any.whl", hash = "sha256:3937969fcb5290d1a007e068e7af45d0a44f885e3bfe4bf1860f7e81794930f8", size = 94204, upload-time = "2026-08-21T14:25:48.948Z" },
 ]
 
+[package.optional-dependencies]
+opentelemetry = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-instrumentation" },
+    { name = "opentelemetry-semantic-conventions" },
+    { name = "psutil" },
+]
+
 [[package]]
 name = "taskiq-dependencies"
 version = "1.5.7"
@@ -3673,7 +3681,7 @@ dependencies = [
     { name = "redis" },
     { name = "sqlalchemy" },
     { name = "sqlalchemy-paradedb" },
-    { name = "taskiq" },
+    { name = "taskiq", extra = ["opentelemetry"] },
     { name = "taskiq-redis" },
     { name = "vl-convert-python" },
 ]
@@ -3707,7 +3715,7 @@ requires-dist = [
     { name = "redis", specifier = ">=7.4.0" },
     { name = "sqlalchemy", specifier = ">=2.0.50" },
     { name = "sqlalchemy-paradedb", specifier = ">=0.6.0" },
-    { name = "taskiq", specifier = ">=0.12.4" },
+    { name = "taskiq", extras = ["opentelemetry"], specifier = ">=0.12.4" },
     { name = "taskiq-redis", specifier = ">=1.2.2" },
     { name = "vl-convert-python", specifier = ">=1.9.0.post1" },
 ]

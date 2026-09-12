@@ -12,7 +12,7 @@ dependencies = [
     "asyncpg==0.31.0",
     "psycopg[binary,pool]>=3.3.4",
     "sqlalchemy-paradedb>=0.6.0",
-    "taskiq>=0.12.4",
+    "taskiq[opentelemetry]>=0.12.4",
     "taskiq-redis>=1.2.2",
     "redis>=7.4.0",
     "logfire[fastapi,httpx,sqlalchemy]>=4.33.0",

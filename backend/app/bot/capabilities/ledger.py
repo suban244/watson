@@ -182,113 +182,146 @@ async def _write_entry(
         )
 
 
+class LendMoney(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    person: str = Field(
+        description="Who received it — nickname or full name. Created if they are new."
+    )
+    amount: float = Field(description="How much, in NPR, positive.")
+    title: str | None = Field(
+        default=None,
+        description=(
+            'What it was for, e.g. "Ticket money". Omit if the user did not say.'
+        ),
+    )
+    date: str | None = Field(
+        default=None, description="YYYY-MM-DD. Omit if it was today."
+    )
+
+
 @ledger.tool_plain
-async def lend_money(
-    person: str,
-    amount: float,
-    title: str | None = None,
-    date: str | None = None,
-) -> LedgerEntryResult:
+async def lend_money(params: LendMoney) -> LedgerEntryResult:
     """Record money the user lent someone and expects back.
 
     Writes no expense: lending is not spending, so this stays out of the
     monthly budget. Do not also call `add_expense` for the same money.
-
-    Args:
-        person: Who received it — nickname or full name. Created if they are new.
-        amount: How much, in NPR, positive.
-        title: What it was for, e.g. "Ticket money". Omit if the user did not say.
-        date: YYYY-MM-DD. Omit if it was today.
     """
     return await _write_entry(
-        person, abs(amount), title, date, fallback="Lent to {name}"
+        params.person,
+        abs(params.amount),
+        params.title,
+        params.date,
+        fallback="Lent to {name}",
+    )
+
+
+class BorrowMoney(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    person: str = Field(
+        description="Who it is owed to — nickname or full name. Created if they are new."
+    )
+    amount: float = Field(description="How much, in NPR, positive.")
+    title: str | None = Field(
+        default=None, description="What it was for. Omit if the user did not say."
+    )
+    date: str | None = Field(
+        default=None, description="YYYY-MM-DD. Omit if it was today."
     )
 
 
 @ledger.tool_plain
-async def borrow_money(
-    person: str,
-    amount: float,
-    title: str | None = None,
-    date: str | None = None,
-) -> LedgerEntryResult:
-    """Record money the user owes someone — they lent it, or covered something.
-
-    Args:
-        person: Who it is owed to — nickname or full name. Created if they are new.
-        amount: How much, in NPR, positive.
-        title: What it was for. Omit if the user did not say.
-        date: YYYY-MM-DD. Omit if it was today.
-    """
+async def borrow_money(params: BorrowMoney) -> LedgerEntryResult:
+    """Record money the user owes someone — they lent it, or covered something."""
     return await _write_entry(
-        person, -abs(amount), title, date, fallback="Borrowed from {name}"
+        params.person,
+        -abs(params.amount),
+        params.title,
+        params.date,
+        fallback="Borrowed from {name}",
+    )
+
+
+class SplitExpense(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(description='What the bill was for, e.g. "Handbrew".')
+    total_amount: float = Field(description="The whole bill in NPR, before splitting.")
+    my_share: float = Field(
+        description=(
+            "The user's own portion. Must be more than zero — if none of the "
+            "bill was theirs, use `lend_money` instead."
+        )
+    )
+    owed: list[Share] = Field(
+        description=(
+            "One entry per other person, with their share. Together with "
+            "`my_share` these must add up to `total_amount`."
+        )
+    )
+    category: ExpenseCategory | None = Field(
+        default=None,
+        description=(
+            "The category for the user's share. Pick the closest fit; omit if "
+            "genuinely unclear (defaults to misc)."
+        ),
+    )
+    date: str | None = Field(
+        default=None, description="YYYY-MM-DD. Omit if it was today."
+    )
+    tags: list[str] | None = Field(
+        default=None,
+        description=(
+            "Slugs of any active tags or pots this belongs to. Omit when none "
+            "clearly applies; do not invent slugs."
+        ),
     )
 
 
 @ledger.tool_plain
-async def split_expense(
-    title: str,
-    total_amount: float,
-    my_share: float,
-    owed: list[Share],
-    category: ExpenseCategory | None = None,
-    date: str | None = None,
-    tags: list[str] | None = None,
-) -> SharedExpenseRead:
+async def split_expense(params: SplitExpense) -> SharedExpenseRead:
     """Record a bill the user paid and split with others.
 
     The user's own share is recorded as a normal expense; everyone else's
     share becomes a debt they owe, linked to it. Only `my_share` reaches the
     budget, which is what keeps the monthly totals honest.
-
-    Args:
-        title: What the bill was for, e.g. "Handbrew".
-        total_amount: The whole bill in NPR, before splitting.
-        my_share: The user's own portion. Must be more than zero — if none of
-            the bill was theirs, use `lend_money` instead.
-        owed: One entry per other person, with their share. Together with
-            `my_share` these must add up to `total_amount`.
-        category: The category for the user's share. Pick the closest fit; omit
-            if genuinely unclear (defaults to misc).
-        date: YYYY-MM-DD. Omit if it was today.
-        tags: Slugs of any active tags or pots this belongs to. Omit when none
-            clearly applies; do not invent slugs.
     """
-    if my_share <= 0:
+    if params.my_share <= 0:
         raise ModelRetry(
             "my_share must be more than zero. If none of this bill was the "
             "user's own, it is a loan — use lend_money instead."
         )
-    if not owed:
+    if not params.owed:
         raise ModelRetry(
             "A split needs at least one other person; use add_expense instead."
         )
 
-    claimed = my_share + sum(share.amount for share in owed)
-    if abs(claimed - total_amount) > SPLIT_TOLERANCE:
+    claimed = params.my_share + sum(share.amount for share in params.owed)
+    if abs(claimed - params.total_amount) > SPLIT_TOLERANCE:
         raise ModelRetry(
-            f"The shares do not add up: {my_share:g} + "
-            f"{' + '.join(f'{s.amount:g}' for s in owed)} = {claimed:g}, "
-            f"but the bill is {total_amount:g}. Recheck the split."
+            f"The shares do not add up: {params.my_share:g} + "
+            f"{' + '.join(f'{s.amount:g}' for s in params.owed)} = {claimed:g}, "
+            f"but the bill is {params.total_amount:g}. Recheck the split."
         )
 
-    date_obj = _parse_date_or_retry(date)
+    date_obj = _parse_date_or_retry(params.date)
 
     async with async_session_maker() as session:
         nicknames: dict[uuid.UUID, str] = {}
         shares: list[LedgerShare] = []
-        for share in owed:
+        for share in params.owed:
             resolved = await _resolve(session, share.person, create=True)
             nicknames[resolved.id] = resolved.nickname
             shares.append(LedgerShare(person_id=resolved.id, amount=abs(share.amount)))
 
         expense = TransactionCreate(
-            amount=my_share,
+            amount=params.my_share,
             date=date_obj,
-            title=title,
-            category=category or ExpenseCategory.MISC,
+            title=params.title,
+            category=params.category or ExpenseCategory.MISC,
             is_expense=True,
-            tags=tags or [],
+            tags=params.tags or [],
         )
 
         try:
@@ -310,12 +343,18 @@ async def split_expense(
         )
 
 
+class SettleUp(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    person: str = Field(description="Who settled up — nickname or full name.")
+    amount: float = Field(description="How much changed hands, in NPR, positive.")
+    date: str | None = Field(
+        default=None, description="YYYY-MM-DD. Omit if it was today."
+    )
+
+
 @ledger.tool_plain
-async def settle_up(
-    person: str,
-    amount: float,
-    date: str | None = None,
-) -> LedgerEntryResult:
+async def settle_up(params: SettleUp) -> LedgerEntryResult:
     """Record a repayment, in whichever direction the debt runs.
 
     Pass a positive amount; the direction is worked out from the current
@@ -324,21 +363,16 @@ async def settle_up(
     The returned `balance` is where things stand afterwards. Overpayment is not
     clamped: settling more than was owed pushes the balance past zero and the
     debt now runs the other way.
-
-    Args:
-        person: Who settled up — nickname or full name.
-        amount: How much changed hands, in NPR, positive.
-        date: YYYY-MM-DD. Omit if it was today.
     """
-    date_obj = _parse_date_or_retry(date)
+    date_obj = _parse_date_or_retry(params.date)
 
     async with async_session_maker() as session:
-        resolved = await _resolve(session, person)
+        resolved = await _resolve(session, params.person)
         try:
             entry = await ledger_service.settle(
                 session,
                 resolved.id,
-                amount,
+                params.amount,
                 title=f"Settled with {resolved.nickname}",
                 date=date_obj,
             )
@@ -388,20 +422,23 @@ async def person_history(params: PersonHistoryParams) -> PersonLedger:
         )
 
 
+class DeleteLedgerEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    entry_id: str = Field(description="The id of the entry, from `person_history`.")
+
+
 @ledger.tool_plain
-async def delete_ledger_entry(entry_id: str) -> LedgerEntryRead:
+async def delete_ledger_entry(params: DeleteLedgerEntry) -> LedgerEntryRead:
     """Remove a ledger entry, returning what was removed.
 
     There is no update tool — to correct an entry, delete it and record it
     again from what comes back here.
-
-    Args:
-        entry_id: The id of the entry, from `person_history`.
     """
     try:
-        parsed_id = uuid.UUID(entry_id)
+        parsed_id = uuid.UUID(params.entry_id)
     except ValueError as exc:
-        raise ModelRetry(f"'{entry_id}' is not a valid entry id.") from exc
+        raise ModelRetry(f"'{params.entry_id}' is not a valid entry id.") from exc
 
     async with async_session_maker() as session:
         entry = await ledger_service.get_entry(session, parsed_id)

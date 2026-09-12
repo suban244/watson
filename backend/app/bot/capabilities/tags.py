@@ -10,17 +10,6 @@ from services import tags as tag_service
 from services import transactions as transaction_service
 
 
-class ToolArgs(BaseModel):
-    """Base for tool argument models.
-
-    pydantic-ai flattens a single model-like argument, so these fields become the
-    tool's own parameters; `extra="forbid"` keeps `additionalProperties: false`
-    on the generated schema. Each model's docstring becomes the tool description.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-
 def format_tag(tag: Tag) -> str:
     kind = "pot" if tag.is_pot else "tag"
     limit = f" | limit {tag.limit_amount:g} NPR" if tag.limit_amount else ""
@@ -92,9 +81,8 @@ Tag workflows:
 )
 
 
-class CreatePot(ToolArgs):
-    """Create a pot: a tag that tracks spending toward a theme, optionally
-    against a limit."""
+class CreatePot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
     name: str = Field(description='Display name, e.g. "Fifa Final 2026".')
     description: str = Field(
@@ -123,6 +111,8 @@ class CreatePot(ToolArgs):
 
 @tags.tool_plain
 async def create_pot(params: CreatePot) -> str:
+    """Create a pot: a tag that tracks spending toward a theme, optionally
+    against a limit."""
     async with async_session_maker() as session:
         try:
             tag = await tag_service.create_tag(
@@ -144,8 +134,8 @@ async def create_pot(params: CreatePot) -> str:
     return f"Pot created: {tag.name} (slug {tag.slug}){limit}."
 
 
-class CreateTag(ToolArgs):
-    """Create a plain tag for labelling transactions, with no spend tracking."""
+class CreateTag(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
     name: str = Field(description='Display name, e.g. "Work Reimbursable".')
     description: str | None = Field(
@@ -159,6 +149,7 @@ class CreateTag(ToolArgs):
 
 @tags.tool_plain
 async def create_tag(params: CreateTag) -> str:
+    """Create a plain tag for labelling transactions, with no spend tracking."""
     async with async_session_maker() as session:
         try:
             tag = await tag_service.create_tag(
@@ -185,8 +176,8 @@ async def list_tags() -> str:
     return response
 
 
-class TagTransaction(ToolArgs):
-    """Add tags to an existing transaction, keeping any it already has."""
+class TagTransaction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
     transaction_id: str = Field(
         description="The id of the transaction, from search or list results."
@@ -196,6 +187,7 @@ class TagTransaction(ToolArgs):
 
 @tags.tool_plain
 async def tag_transaction(params: TagTransaction) -> str:
+    """Add tags to an existing transaction, keeping any it already has."""
     try:
         parsed_id = uuid.UUID(params.transaction_id)
     except ValueError:
@@ -221,8 +213,8 @@ async def tag_transaction(params: TagTransaction) -> str:
     return f"Transaction now tagged: {', '.join(updated.tags) or 'none'}."
 
 
-class UntagTransaction(ToolArgs):
-    """Remove tags from a transaction, leaving its other tags in place."""
+class UntagTransaction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
     transaction_id: str = Field(
         description="The id of the transaction, from search or list results."
@@ -232,6 +224,7 @@ class UntagTransaction(ToolArgs):
 
 @tags.tool_plain
 async def untag_transaction(params: UntagTransaction) -> str:
+    """Remove tags from a transaction, leaving its other tags in place."""
     try:
         parsed_id = uuid.UUID(params.transaction_id)
     except ValueError:
@@ -260,8 +253,8 @@ async def untag_transaction(params: UntagTransaction) -> str:
     return f"Transaction now tagged: {', '.join(updated.tags) or 'none'}."
 
 
-class SetPotLimit(ToolArgs):
-    """Set or clear a pot's spending limit."""
+class SetPotLimit(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
     slug: str = Field(description='The pot\'s slug, e.g. "fifa-final-2026".')
     limit_amount: float | None = Field(
@@ -275,6 +268,7 @@ class SetPotLimit(ToolArgs):
 
 @tags.tool_plain
 async def set_pot_limit(params: SetPotLimit) -> str:
+    """Set or clear a pot's spending limit."""
     async with async_session_maker() as session:
         tag = await tag_service.get_tag_by_slug(
             session, tag_service.slugify(params.slug)
@@ -298,15 +292,16 @@ async def set_pot_limit(params: SetPotLimit) -> str:
     return f"Limit for {name} set to {params.limit_amount:g} NPR."
 
 
-class ArchiveTag(ToolArgs):
-    """Retire a tag or pot. Transactions already carrying it keep it; it just
-    stops being offered for new ones."""
+class ArchiveTag(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
     slug: str = Field(description='The slug to archive, e.g. "fifa-final-2026".')
 
 
 @tags.tool_plain
 async def archive_tag(params: ArchiveTag) -> str:
+    """Retire a tag or pot. Transactions already carrying it keep it; it just
+    stops being offered for new ones."""
     async with async_session_maker() as session:
         tag = await tag_service.get_tag_by_slug(
             session, tag_service.slugify(params.slug)

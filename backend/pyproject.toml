@@ -22,6 +22,7 @@ dependencies = [
     "greenlet>=3.5.1",
     "pydantic-ai-harness[codemode]>=0.24.0",
     "vl-convert-python>=1.9.0.post1",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]
@@ -34,7 +35,6 @@ dev = [
     "marimo>=0.17.8",
     "mistralai>=1.9.11",
     "python-dotenv>=1.2.1",
-    "httpx>=0.28.1",
     "matplotlib>=3.11.1",
 ]
 

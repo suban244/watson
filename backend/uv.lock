@@ -3672,6 +3672,7 @@ dependencies = [
     { name = "discord-py" },
     { name = "fastapi", extra = ["standard"] },
     { name = "greenlet" },
+    { name = "httpx" },
     { name = "logfire", extra = ["fastapi", "httpx", "sqlalchemy"] },
     { name = "psycopg", extra = ["binary", "pool"] },
     { name = "pydantic-ai-harness", extra = ["codemode"] },
@@ -3688,7 +3689,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "ipykernel" },
     { name = "marimo" },
     { name = "matplotlib" },
@@ -3706,6 +3706,7 @@ requires-dist = [
     { name = "discord-py", specifier = ">=2.7.1" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.136.3" },
     { name = "greenlet", specifier = ">=3.5.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "logfire", extras = ["fastapi", "httpx", "sqlalchemy"], specifier = ">=4.33.0" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.3.4" },
     { name = "pydantic-ai-harness", extras = ["codemode"], specifier = ">=0.24.0" },
@@ -3722,7 +3723,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx", specifier = ">=0.28.1" },
     { name = "ipykernel", specifier = ">=7.1.0" },
     { name = "marimo", specifier = ">=0.17.8" },
     { name = "matplotlib", specifier = ">=3.11.1" },

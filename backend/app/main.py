@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 from api import router as api_router
 from observability import setup_logfire
+from services import fizzy as fizzy_service
 
 
 @asynccontextmanager
@@ -19,6 +20,7 @@ async def lifespan(app: FastAPI):
         await discord_task
     except asyncio.CancelledError:
         pass
+    await fizzy_service.aclose()
 
 
 app = FastAPI(lifespan=lifespan)

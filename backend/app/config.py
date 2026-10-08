@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     MISTRAL_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
 
+    # Self-hosted Fizzy; the capability is only loaded when a token is set.
+    FIZZY_API_URL: str = ""
+    FIZZY_TOKEN: str = ""
+    # The numeric account slug from Fizzy URLs, e.g. "6102600" in /6102600/boards.
+    FIZZY_ACCOUNT: str = ""
+
     # Prabin Spotify invoice email task
     EXTERNAL_PRABIN_EMAIL_SMTP_SERVER: str = "smtp.gmail.com"
     EXTERNAL_PRABIN_EMAIL_SMTP_PORT: int = 587

@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     MISTRAL_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
 
+    FIZZY_API_URL: str = ""
+    FIZZY_TOKEN: str = ""
+    FIZZY_ACCOUNT: str = ""
+
     # Prabin Spotify invoice email task
     EXTERNAL_PRABIN_EMAIL_SMTP_SERVER: str = "smtp.gmail.com"
     EXTERNAL_PRABIN_EMAIL_SMTP_PORT: int = 587

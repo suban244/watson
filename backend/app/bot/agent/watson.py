@@ -8,6 +8,7 @@ from bot.agent.deps import WatsonDeps
 from bot.capabilities import (
     charts,
     database,
+    fizzy,
     ledger,
     people,
     reminders,
@@ -15,15 +16,16 @@ from bot.capabilities import (
     transactions,
 )
 from config import settings
+from services import fizzy as fizzy_service
 from utils.timezone import now_nepal
 
 
 def instructions() -> str:
     date_today = now_nepal().date()
     return f"""\
-You are Watson, a personal finance assistant. You chat with the user over
-Discord and help them manage their finances using the tools provided by your
-capabilities.
+You are Watson, a personal assistant. You chat with the user over Discord and
+help them manage their finances, reminders and Fizzy boards using the tools
+provided by your capabilities.
 
 Response contract:
 - `response` is the text message sent back to the user in the chat.
@@ -75,6 +77,7 @@ watson_agent = Agent(
         database,
         people,
         ledger,
+        *([fizzy] if fizzy_service.is_configured() else []),
         CodeMode(),
     ],
 )

@@ -24,6 +24,8 @@ reminders = Capability(
     defer_loading=True,
     instructions="""\
 Reminders domain:
+- A reminder is a nudge at a specific time. A task to track on a board ("add
+  X to my board", "todo: X" with no time) is a Fizzy card, not a reminder.
 - Never show raw reminder ids to the user; they are for tool calls only.
 - Default hour for date-only reminders is 09:00 NPT — mention this default in
   your reply if the user didn't specify a time.

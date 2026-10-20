@@ -144,6 +144,7 @@ async def my_user_id() -> str:
                 break
         else:
             raise ValueError(f"The Fizzy token has no access to account '{wanted}'.")
+    assert _my_user_id is not None
     return _my_user_id
 
 

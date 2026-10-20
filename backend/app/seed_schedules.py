@@ -4,9 +4,7 @@ from taskiq import ScheduledTask
 
 from scheduler import source
 from tasks.external.prabin_spotify.send_invoices import send_prabin_spotify_invoices
-from tasks.finances.calculate_expenses_of_last_week import (
-    calculate_expenses_of_last_week,
-)
+from tasks.finances.send_weekly_summary import send_weekly_summary
 from tasks.reminders.dispatch_due_reminders import dispatch_due_reminders
 
 
@@ -19,7 +17,7 @@ async def main() -> None:
     # Monday 8:00 AM Asia/Kathmandu = Monday 2:15 AM UTC
     await source.add_schedule(
         ScheduledTask(
-            task_name=calculate_expenses_of_last_week.task_name,
+            task_name=send_weekly_summary.task_name,
             labels={},
             args=[],
             kwargs={},

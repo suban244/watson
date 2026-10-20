@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 
 from config import settings
+from services import weekly_summaries
 from tasks.external.prabin_spotify.send_invoices import (
     send_invoice,
     send_prabin_spotify_invoices,
@@ -49,6 +50,16 @@ router.include_router(ledger_router, prefix="/ledger", tags=["ledger"])
 async def trigger_spotify_invoices():
     await send_prabin_spotify_invoices.kiq()
     return {"status": "Invoice job enqueued"}
+
+
+@router.delete(
+    "/tasks/weekly-summaries/",
+    status_code=204,
+    dependencies=[Depends(verify_internal_token)],
+)
+async def clear_weekly_summaries():
+    """Forget past weekly reviews, so the next one starts without them."""
+    await weekly_summaries.clear()
 
 
 @router.post(

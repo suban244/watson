@@ -1,1 +1,1 @@
-from .calculate_expenses_of_last_week import *  # noqa
+from .send_weekly_summary import *  # noqa

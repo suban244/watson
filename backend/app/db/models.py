@@ -7,7 +7,6 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Date,
-    DateTime,
     Float,
     ForeignKey,
     Index,
@@ -20,6 +19,9 @@ from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import func
 
+from db.types import NptDateTime
+from utils.timezone import now_nepal
+
 
 class Base(DeclarativeBase):
     pass
@@ -30,14 +32,14 @@ class PrimaryTimestamped(Base):
     __abstract__ = True
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=datetime.now,
+        NptDateTime(),
+        default=now_nepal,
         server_default=func.now(),
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=datetime.now,
+        NptDateTime(),
+        default=now_nepal,
         onupdate=func.now(),
         nullable=False,
     )
@@ -59,7 +61,7 @@ class Transaction(PrimaryUUIDTimestamped):
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_expense: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    date: Mapped[datetime] = mapped_column(NptDateTime(), nullable=False)
 
     category: Mapped[str | None] = mapped_column(
         String(50), nullable=True, comment="Category of the transaction"
@@ -188,7 +190,7 @@ class LedgerEntry(PrimaryUUIDTimestamped):
         Float, nullable=False, comment="Signed: + they owe you, - you owe them"
     )
     title: Mapped[str] = mapped_column(Text, nullable=False)
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    date: Mapped[datetime] = mapped_column(NptDateTime(), nullable=False)
 
     transaction_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID,
@@ -210,7 +212,7 @@ class Reminder(PrimaryUUIDTimestamped):
     __tablename__ = "reminders"
 
     message: Mapped[str] = mapped_column(Text, nullable=False)
-    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    due_at: Mapped[datetime] = mapped_column(NptDateTime(), nullable=False)
     recurrence: Mapped[str | None] = mapped_column(String(20), nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default=ReminderStatus.PENDING

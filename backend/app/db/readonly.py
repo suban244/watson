@@ -21,6 +21,7 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
 from config import settings
+from utils.timezone import NEPAL_TZ
 
 # Long enough for a month-over-month aggregate over years of rows, short enough
 # that an accidental cartesian join doesn't pin a Postgres backend on the Pi.
@@ -41,8 +42,9 @@ def _conninfo(user: str, password: str) -> str:
 
 
 def readonly_conninfo() -> str:
-    return _conninfo(
-        settings.POSTGRES_READONLY_USER, settings.POSTGRES_READONLY_PASSWORD
+    return make_conninfo(
+        _conninfo(settings.POSTGRES_READONLY_USER, settings.POSTGRES_READONLY_PASSWORD),
+        options=f"-c timezone={NEPAL_TZ.key}",
     )
 
 

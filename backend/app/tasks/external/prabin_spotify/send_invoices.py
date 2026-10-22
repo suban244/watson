@@ -1,7 +1,7 @@
 import asyncio
 import re
 import smtplib
-from datetime import datetime, timedelta
+from datetime import timedelta
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -11,6 +11,7 @@ import logfire
 
 from config import settings
 from taskiq_app import broker
+from utils.timezone import now_nepal
 
 _DIR = Path(__file__).parent
 _TEMPLATE = _DIR / "invoice_template.html"
@@ -41,7 +42,7 @@ def _load_recipients() -> list[dict]:
 
 
 def _inject_globals(html: str) -> str:
-    today = datetime.now()
+    today = now_nepal()
     due = today + timedelta(days=7)
     invoice_date = today.strftime("%d %b %Y").lstrip("0")
     due_date = due.strftime("%d %b %Y").lstrip("0")
@@ -78,7 +79,7 @@ def send_invoice(email: str, multiplier: float = 1.0, name: str = "") -> bool:
         html = _apply_multiplier(html, multiplier)
 
     msg = MIMEMultipart("related")
-    msg["Subject"] = f"Spotify Invoice — {datetime.now().strftime('%B %Y')} 🎵"
+    msg["Subject"] = f"Spotify Invoice — {now_nepal().strftime('%B %Y')} 🎵"
     msg["From"] = (
         f"{settings.EXTERNAL_PRABIN_EMAIL_SENDER_NAME} <{settings.EXTERNAL_PRABIN_EMAIL_SENDER}>"
     )

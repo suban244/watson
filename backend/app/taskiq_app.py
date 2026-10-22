@@ -6,7 +6,7 @@ from taskiq_redis import RedisAsyncResultBackend, RedisStreamBroker
 from config import settings
 from observability import setup_logfire
 
-broker = (
+broker: RedisStreamBroker = (
     RedisStreamBroker(settings.REDIS_URL)
     .with_result_backend(
         RedisAsyncResultBackend(settings.REDIS_URL, result_ex_time=1000)

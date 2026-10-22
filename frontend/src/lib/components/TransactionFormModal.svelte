@@ -3,6 +3,7 @@
 	import Icon from './Icon.svelte';
 	import { createTransaction, updateTransaction, MAX_TAGS_PER_TRANSACTION } from '$lib/api';
 	import type { Tag, Transaction } from '$lib/api';
+	import { toLocalDateKey } from '$lib/utils/date';
 
 	let {
 		open = $bindable(false),
@@ -102,7 +103,7 @@
 		if (!open) return;
 		title = transaction?.title ?? '';
 		amount = transaction ? String(transaction.amount) : '';
-		date = transaction ? transaction.date.slice(0, 10) : new Date().toISOString().slice(0, 10);
+		date = toLocalDateKey(transaction?.date ?? new Date());
 		isExpense = transaction?.is_expense ?? true;
 		category = transaction?.category ?? '';
 		description = transaction?.description ?? '';

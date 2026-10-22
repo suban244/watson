@@ -66,8 +66,8 @@
 			: [...base];
 		// "any of", matching the backend's `&&` overlap semantics on ?tags=
 		if (selectedTags.size > 0) r = r.filter((tx) => tx.tags.some((slug) => selectedTags.has(slug)));
-		if (dateFrom) r = r.filter((tx) => tx.date.slice(0, 10) >= dateFrom);
-		if (dateTo) r = r.filter((tx) => tx.date.slice(0, 10) <= dateTo);
+		if (dateFrom) r = r.filter((tx) => toLocalDateKey(tx.date) >= dateFrom);
+		if (dateTo) r = r.filter((tx) => toLocalDateKey(tx.date) <= dateTo);
 		if (amountMin) r = r.filter((tx) => tx.amount >= parseFloat(amountMin));
 		if (amountMax) r = r.filter((tx) => tx.amount <= parseFloat(amountMax));
 		// always newest transaction date first, regardless of what order the API returned
@@ -131,21 +131,21 @@
 
 	function setDatePreset(preset: 'last7d' | 'last30d' | 'thisMonth' | 'lastMonth' | 'last3m' | 'thisYear') {
 		const now = new Date();
-		const today = now.toISOString().split('T')[0];
+		const today = toLocalDateKey(now);
 		const ago = (days: number) => {
 			const d = new Date(now);
 			d.setDate(d.getDate() - days);
-			return d.toISOString().split('T')[0];
+			return toLocalDateKey(d);
 		};
 		if (preset === 'last7d')    { dateFrom = ago(6);  dateTo = today; }
 		if (preset === 'last30d')   { dateFrom = ago(29); dateTo = today; }
 		if (preset === 'thisMonth') {
-			dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+			dateFrom = toLocalDateKey(new Date(now.getFullYear(), now.getMonth(), 1));
 			dateTo = today;
 		}
 		if (preset === 'lastMonth') {
-			dateFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
-			dateTo = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+			dateFrom = toLocalDateKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+			dateTo = toLocalDateKey(new Date(now.getFullYear(), now.getMonth(), 0));
 		}
 		if (preset === 'last3m')    { dateFrom = ago(89); dateTo = today; }
 		if (preset === 'thisYear')  { dateFrom = `${now.getFullYear()}-01-01`; dateTo = today; }
